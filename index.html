@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Timbratrice Gesta — Artigiano</title>
+<style>
+  :root{ --bg:#09090b; --card:#18181b; --line:#27272a; --txt:#e4e4e7; --muted:#a1a1aa; --em:#10b981; --em2:#34d399; --amber:#f59e0b; --rose:#f43f5e; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:var(--bg); color:var(--txt); font-family:-apple-system,Segoe UI,Roboto,sans-serif; min-height:100vh;}
+  .wrap{max-width:430px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
+  header{padding:16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; position:sticky; top:0; background:var(--bg); z-index:5;}
+  .logo{width:40px;height:40px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;color:#09090b;font-size:13px;}
+  h1{font-size:15px; margin:0; font-weight:900; letter-spacing:.5px; text-transform:uppercase;}
+  .sub{font-size:10px;color:var(--muted);font-family:monospace;}
+  .badge{margin-left:auto; font-size:9px; font-weight:800; background:rgba(245,158,11,.15); color:var(--amber); border:1px solid rgba(245,158,11,.3); padding:3px 7px; border-radius:6px; text-transform:uppercase;}
+  main{flex:1; padding:20px 16px; display:flex; flex-direction:column; gap:16px;}
+  .label{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-family:monospace; margin-bottom:8px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px;}
+  input,select{width:100%; padding:14px; background:#09090b; border:1px solid var(--line); border-radius:12px; color:#fff; font-size:18px; outline:none;}
+  input:focus,select:focus{border-color:var(--em);}
+  .pin{text-align:center; letter-spacing:14px; font-size:28px;}
+  .big{width:100%; padding:20px; border:none; border-radius:16px; font-size:20px; font-weight:900; cursor:pointer; text-transform:uppercase; letter-spacing:1px;}
+  .b-em{background:var(--em); color:#09090b;}
+  .b-amber{background:var(--amber); color:#09090b;}
+  .b-blue{background:#0ea5e9; color:#09090b;}
+  .b-rose{background:var(--rose); color:#fff;}
+  .b-ghost{background:#09090b; color:var(--txt); border:1px solid var(--line);}
+  .row{display:flex; gap:10px;}
+  .row .big{font-size:16px; padding:16px;}
+  .photo-btn{width:100%; padding:22px; border:2px dashed var(--line); border-radius:16px; background:#09090b; color:var(--muted); font-size:16px; font-weight:700; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer;}
+  .photo-btn.has{border-color:var(--em); color:var(--em2);}
+  .preview{width:100%; border-radius:14px; margin-top:10px; display:none; border:1px solid var(--line);}
+  .hide{display:none!important;}
+  .who{font-size:22px;font-weight:900;}
+  .ok{text-align:center; padding:30px 16px;}
+  .ok .tick{width:84px;height:84px;border-radius:50%;background:rgba(16,185,129,.12);border:2px solid var(--em);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:42px;}
+  .demo{font-size:10px;color:#71717a;text-align:center;padding:12px;font-family:monospace;}
+  .pill{display:inline-block;font-size:11px;padding:4px 10px;border-radius:999px;background:rgba(16,185,129,.12);color:var(--em2);border:1px solid rgba(16,185,129,.3);margin-bottom:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">GA</div>
+    <div>
+      <h1>Timbratrice <span style="color:var(--em2)">Gesta</span></h1>
+      <div class="sub">Allestimenti S.r.l.</div>
+    </div>
+    <span class="badge">Beta 1</span>
+  </header>
+  <main>
+
+    <!-- LOGIN -->
+    <section id="login">
+      <div class="card">
+        <div class="label">Ciao! Inserisci il tuo PIN</div>
+        <input id="pin" class="pin" inputmode="numeric" maxlength="4" placeholder="••••">
+        <div style="height:14px"></div>
+        <button id="btnEntra" class="big b-em" onclick="entra()">Entra</button>
+      </div>
+    </section>
+
+    <!-- HOME / ENTRATA -->
+    <section id="home" class="hide">
+      <div class="card">
+        <span class="pill">Buongiorno</span>
+        <div class="who" id="who">Iury Fichera</div>
+      </div>
+      <div class="card">
+        <div class="label">1 · Su quale stand sei?</div>
+        <select id="commessa">
+          <option value="">— scegli la commessa —</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="label">2 · Foto dello stand</div>
+        <label class="photo-btn" id="photoBtn" for="cam">
+          <span style="font-size:30px">📷</span>
+          <span id="photoTxt">Scatta foto stand</span>
+        </label>
+        <input id="cam" type="file" accept="image/*" capture="environment" class="hide" onchange="foto(this)">
+        <img id="preview" class="preview">
+      </div>
+      <button class="big b-em" onclick="timbra('ENTRATA')">▶ Entrata</button>
+    </section>
+
+    <!-- ATTIVO -->
+    <section id="attivo" class="hide">
+      <div class="card">
+        <span class="pill" id="statoPill">Al lavoro dalle 08:05</span>
+        <div class="who" id="who2">Iury Fichera</div>
+        <div class="sub" id="comm2" style="margin-top:4px"></div>
+      </div>
+      <div class="label">Durante la giornata</div>
+      <div class="row">
+        <button class="big b-amber" onclick="timbra('PAUSA')">⏸ Pausa</button>
+        <button class="big b-blue" onclick="timbra('RIENTRO')">↩ Rientro</button>
+      </div>
+      <button class="big b-rose" onclick="timbra('FINE')">⏹ Fine giornata</button>
+    </section>
+
+    <!-- OK -->
+    <section id="ok" class="hide">
+      <div class="ok">
+        <div class="tick">✓</div>
+        <div class="who" id="okTitle">Entrata registrata</div>
+        <div class="sub" id="okSub" style="margin-top:8px"></div>
+        <div style="height:20px"></div>
+        <button class="big b-ghost" onclick="dopoOk()">Continua</button>
+      </div>
+    </section>
+
+  </main>
+  <div class="demo">Timbratrice Gesta · i dati vengono salvati su gesta-cloud.com</div>
+</div>
+
+<script>
+  // Backend Velo su Wix (vedi wix-velo/http-functions.js)
+  var API='https://www.gesta-cloud.com/_functions';
+  var me=null, foto64=null, comm='', occupato=false;
+
+  function show(id){ ['login','home','attivo','ok'].forEach(function(s){ document.getElementById(s).classList.toggle('hide', s!==id); }); window.scrollTo(0,0); }
+
+  function chiama(metodo, path, body){
+    var opt={ method:metodo };
+    if(body){ opt.headers={'Content-Type':'application/json'}; opt.body=JSON.stringify(body); }
+    return fetch(API+path, opt).then(function(r){
+      return r.json().catch(function(){ throw new Error('Risposta non valida (HTTP '+r.status+')'); });
+    });
+  }
+  function erroreRete(){ alert('Non riesco a collegarmi. Controlla la connessione e riprova.'); }
+
+  function entra(){
+    if(occupato) return;
+    var p=document.getElementById('pin').value.trim();
+    if(p.length<4){ alert('Inserisci il PIN (4 cifre)'); return; }
+    var btn=document.getElementById('btnEntra');
+    occupato=true; btn.textContent='Un attimo…';
+    chiama('POST','/login',{pin:p}).then(function(res){
+      if(!res.ok){ alert(res.error||'PIN non valido'); return; }
+      me=res.artigiano;
+      document.getElementById('who').textContent=me.nome;
+      document.getElementById('who2').textContent=me.nome;
+      if(res.aperta){ comm=res.aperta.commessaCodice||''; mostraStato(res.aperta); show('attivo'); }
+      else { caricaCommesse(); show('home'); }
+    }).catch(erroreRete).finally(function(){ occupato=false; btn.textContent='Entra'; });
+  }
+
+  function mostraStato(ap){
+    var pill=document.getElementById('statoPill');
+    if(ap.pausa && !ap.rientro) pill.textContent='In pausa dalle '+ap.pausa;
+    else if(ap.rientro) pill.textContent='Rientrato alle '+ap.rientro;
+    else pill.textContent='Al lavoro dalle '+(ap.entrata||'');
+    document.getElementById('comm2').textContent=comm?('Commessa: '+comm):'';
+  }
+
+  function caricaCommesse(){
+    chiama('GET','/commesse').then(function(res){
+      if(!res.ok) return;
+      var sel=document.getElementById('commessa');
+      while(sel.options.length>1) sel.remove(1);
+      res.commesse.forEach(function(c){
+        var o=document.createElement('option');
+        o.value=c.codice;
+        o.textContent=c.codice+' · '+(c.descrizione||'')+(c.cliente?(' — '+c.cliente):'');
+        sel.appendChild(o);
+      });
+    }).catch(function(){ /* il menu resta vuoto: l'errore comparirà alla timbratura */ });
+  }
+
+  // Comprime la foto (max 800px, jpeg) così l'invio è leggero anche in fiera con poca rete
+  function foto(inp){
+    if(!inp.files || !inp.files[0]) return;
+    var img=new Image();
+    img.onload=function(){
+      var MAX=800, k=Math.min(1, MAX/Math.max(img.width,img.height));
+      var c=document.createElement('canvas');
+      c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      foto64=c.toDataURL('image/jpeg',0.6);
+      URL.revokeObjectURL(img.src);
+      var pv=document.getElementById('preview'); pv.src=foto64; pv.style.display='block';
+      document.getElementById('photoBtn').classList.add('has');
+      document.getElementById('photoTxt').textContent='✓ Foto scattata — tocca per rifare';
+    };
+    img.src=URL.createObjectURL(inp.files[0]);
+  }
+
+  function timbra(tipo){
+    if(occupato) return;
+    var body={tipo:tipo, artigianoId:me.id, artigianoNome:me.nome};
+    if(tipo==='ENTRATA'){
+      comm=document.getElementById('commessa').value;
+      if(!comm){ alert('Scegli prima la commessa'); return; }
+      if(!foto64){ alert('Scatta prima la foto dello stand'); return; }
+      body.commessaCodice=comm; body.fotoBase64=foto64;
+    }
+    occupato=true;
+    chiama('POST','/timbra',body).then(function(res){
+      if(!res.ok){ alert(res.error||'Non sono riuscito a registrare. Riprova.'); return; }
+      var ora=res.ora||'';
+      if(tipo==='ENTRATA'){
+        document.getElementById('comm2').textContent='Commessa: '+comm;
+        document.getElementById('statoPill').textContent='Al lavoro dalle '+ora;
+        foto64=null;
+        okScreen('Entrata registrata', comm+' · ore '+ora, 'attivo');
+      } else if(tipo==='PAUSA'){ document.getElementById('statoPill').textContent='In pausa dalle '+ora; okScreen('Pausa registrata','ore '+ora,'attivo');
+      } else if(tipo==='RIENTRO'){ document.getElementById('statoPill').textContent='Rientrato alle '+ora; okScreen('Rientro registrato','ore '+ora,'attivo');
+      } else if(tipo==='FINE'){
+        var oreTxt=(res.oreNette!=null)?(' · '+res.oreNette+' ore'):'';
+        okScreen('Giornata chiusa','Uscita ore '+ora+oreTxt,'login');
+        setTimeout(function(){ document.getElementById('pin').value=''; me=null; },50);
+      }
+    }).catch(erroreRete).finally(function(){ occupato=false; });
+  }
+
+  var nextAfterOk='attivo';
+  function okScreen(t,s,next){ document.getElementById('okTitle').textContent=t; document.getElementById('okSub').textContent=s; nextAfterOk=next; show('ok'); }
+  function dopoOk(){ show(nextAfterOk); }
+</script>
+</body>
+</html>
