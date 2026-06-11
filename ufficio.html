@@ -44,6 +44,7 @@
   .st-reg{background:#27272a;color:var(--txt);border:1px solid var(--line);}
   .st-corso{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.35);}
   .st-off{background:#27272a;color:var(--muted);border:1px solid var(--line);}
+  .st-err{background:rgba(244,63,94,.15);color:#fb7185;border:1px solid rgba(244,63,94,.35);}
   .form-riga{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
   .form-riga label{font-size:11px; color:var(--muted); display:flex; flex-direction:column; gap:4px;}
   .chk{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--txt);}
@@ -62,7 +63,7 @@
       <h1>Timbratrice <span style="color:var(--em2)">Gesta</span> · Ufficio</h1>
       <div class="sub">centro di controllo operatore</div>
     </div>
-    <span class="badge">Beta 1</span>
+    <span class="badge">Beta 2</span>
   </header>
   <main>
 
@@ -88,6 +89,7 @@
         <label style="font-size:11px;color:var(--muted)">al <input type="date" id="al"></label>
         <button class="b-ghost" onclick="aggiorna()">↻ Aggiorna</button>
         <button class="b-ghost" onclick="scaricaCsv()">⬇ CSV</button>
+        <button class="b-ghost" onclick="reportGiorno()">📄 Report giorno</button>
         <button class="b-ghost" onclick="esci()">Esci</button>
       </div>
 
@@ -244,8 +246,12 @@
 
     var body=document.getElementById('oreBody');
     document.getElementById('oreVuoto').classList.toggle('hide', tt.length>0);
+    var oggiS=oggiStr();
     body.innerHTML = tt.map(function(t){
-      var st = t.stato==='in corso' ? '<span class="b-st st-corso">in corso</span>' : '<span class="b-st st-reg">chiusa</span>';
+      // giornata rimasta aperta in un giorno passato = timbratura mancata (manca il FINE)
+      var st = t.stato==='in corso'
+        ? (t.data<oggiS ? '<span class="b-st st-err">⚠ manca FINE</span>' : '<span class="b-st st-corso">in corso</span>')
+        : '<span class="b-st st-reg">chiusa</span>';
       var foto = t.foto ? '<a href="'+esc(t.foto)+'" target="_blank" rel="noopener">📷</a>' : '';
       return '<tr>'+
         '<td>'+fmtData(t.data)+'</td><td><b>'+esc(t.artigianoNome)+'</b></td><td>'+esc(t.commessaCodice)+'</td>'+
@@ -263,6 +269,62 @@
       if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'Errore'); chk.checked=!chk.checked; return; }
       var t=(db.timbrature||[]).find(function(x){return x.id===id;}); if(t) t.approvata=res.approvata;
     }).catch(function(){ chk.disabled=false; chk.checked=!chk.checked; erroreRete(); });
+  }
+
+  function oggiStr(){ var d=new Date(),p=function(n){return (n<10?'0':'')+n;}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+
+  // ---- REPORT DI FINE GIORNATA (per artigiano, stampabile) ----
+  // Pensato per più commesse nello stesso giorno: somma TUTTE le righe del giorno.
+  function reportGiorno(){
+    var giorno=document.getElementById('al').value || oggiStr();
+    var oggiS=oggiStr();
+    var tt=(db.timbrature||[]).filter(function(t){ return t.data===giorno; });
+    var visti={};
+    var righe=(db.artigiani||[]).filter(function(a){ return a.attivo && a.ruolo!=='ufficio'; }).map(function(a){
+      visti[a.id]=true;
+      return riepilogoArtigiano(a.nome, tt.filter(function(t){ return t.artigianoId===a.id; }), giorno, oggiS);
+    });
+    // timbrature di persone fuori elenco attivi (es. disattivate dopo): non vanno perse
+    var orfani={};
+    tt.forEach(function(t){ if(!visti[t.artigianoId]) orfani[t.artigianoId]=t.artigianoNome; });
+    Object.keys(orfani).forEach(function(id){
+      righe.push(riepilogoArtigiano(orfani[id]+' (non in elenco)', tt.filter(function(t){ return t.artigianoId===id; }), giorno, oggiS));
+    });
+    var totOre=righe.reduce(function(s,r){ return s+r.ore; },0);
+    var quanti=righe.filter(function(r){ return r.cls!=='no'; }).length;
+    var w=window.open('','_blank');
+    if(!w){ alert('Il browser ha bloccato la finestra del report: consenti i popup per questa pagina.'); return; }
+    var css='body{font-family:Segoe UI,Arial,sans-serif;color:#111;padding:28px;max-width:800px;margin:0 auto}'+
+      'h1{font-size:20px;margin:0 0 2px} .sotto{color:#666;font-size:13px;margin-bottom:18px}'+
+      'table{border-collapse:collapse;width:100%} th,td{border:1px solid #bbb;padding:8px 10px;text-align:left;font-size:13px}'+
+      'th{background:#f2f2f2} .ok{color:#0a7a4b;font-weight:700} .warn{color:#c81e3f;font-weight:700}'+
+      '.no{color:#888} .corso{color:#b46900;font-weight:700} .tot{margin-top:14px;font-weight:700;font-size:14px}'+
+      '.firma{margin-top:40px;color:#666;font-size:12px}';
+    var html='<h1>Report giornata — '+fmtData(giorno)+'</h1>'+
+      '<div class="sotto">Timbratrice Gesta · Beta 2 · generato il '+fmtData(oggiS)+'</div>'+
+      '<table><tr><th>Artigiano</th><th>Esito</th><th>Dettaglio (commessa · orari)</th></tr>'+
+      righe.map(function(r){ return '<tr><td>'+esc(r.nome)+'</td><td class="'+r.cls+'">'+r.esito+'</td><td>'+esc(r.det)+'</td></tr>'; }).join('')+
+      '</table>'+
+      '<div class="tot">Totale: '+oreTxt(Math.round(totOre*100)/100)+' ore · '+quanti+' artigiani al lavoro</div>'+
+      '<div class="firma">Verifiche: ⚠ manca FINE = giornata mai chiusa (da sistemare) · "non ha timbrato" = nessuna entrata quel giorno.</div>';
+    w.document.write('<html><head><title>Report '+giorno+'</title><style>'+css+'</style></head><body>'+html+'</body></html>');
+    w.document.close(); w.focus();
+    setTimeout(function(){ try{ w.print(); }catch(e){} }, 400);
+  }
+  function riepilogoArtigiano(nome, mie, giorno, oggiS){
+    if(!mie.length) return {nome:nome, esito:'non ha timbrato', cls:'no', det:'—', ore:0};
+    var aperte=mie.some(function(t){ return t.stato!=='chiuso'; });
+    var ore=mie.reduce(function(s,t){ return s+(t.stato==='chiuso'?(t.oreNette||0):0); },0);
+    var det=mie.map(function(t){
+      var p=[(t.commessaCodice||'?'), t.entrata||''];
+      if(t.pausa) p.push('pausa '+t.pausa);
+      if(t.rientro) p.push('rientro '+t.rientro);
+      p.push(t.uscita?('uscita '+t.uscita):'(aperta)');
+      return p.join(' · ');
+    }).join('  |  ');
+    if(aperte && giorno<oggiS) return {nome:nome, esito:'⚠ manca FINE', cls:'warn', det:det, ore:ore};
+    if(aperte) return {nome:nome, esito:'ancora al lavoro', cls:'corso', det:det, ore:ore};
+    return {nome:nome, esito:'✓ '+oreTxt(Math.round(ore*100)/100)+' ore', cls:'ok', det:det, ore:ore};
   }
 
   function scaricaCsv(){
