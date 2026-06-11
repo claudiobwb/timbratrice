@@ -71,17 +71,18 @@
     <!-- HOME / ENTRATA -->
     <section id="home" class="hide">
       <div class="card">
-        <span class="pill">Buongiorno</span>
+        <span class="pill" id="saluto">Buongiorno</span>
         <div class="who" id="who">Iury Fichera</div>
+        <div class="sub" id="benvenuto" style="margin-top:6px"></div>
       </div>
       <div class="card">
-        <div class="label">1 · Su quale stand sei?</div>
+        <div class="label" id="lblStand">1 · Su quale stand sei?</div>
         <select id="commessa">
-          <option value="">— scegli la commessa —</option>
+          <option value="" id="optScegli">— scegli la commessa —</option>
         </select>
       </div>
       <div class="card">
-        <div class="label">2 · Foto dello stand</div>
+        <div class="label" id="lblFoto">2 · Foto dello stand</div>
         <label class="photo-btn" id="photoBtn" for="cam">
           <span style="font-size:30px">📷</span>
           <span id="photoTxt">Scatta foto stand</span>
@@ -89,8 +90,8 @@
         <input id="cam" type="file" accept="image/*" capture="environment" class="hide" onchange="foto(this)">
         <img id="preview" class="preview">
       </div>
-      <button class="big b-em" onclick="timbra('ENTRATA')">▶ Entrata</button>
-      <button class="big b-ghost" onclick="apriMie()">📋 Le mie ore</button>
+      <button class="big b-em" id="btnEntrata" onclick="timbra('ENTRATA')">▶ Entrata</button>
+      <button class="big b-ghost" id="btnMie1" onclick="apriMie()">📋 Le mie ore</button>
     </section>
 
     <!-- ATTIVO -->
@@ -99,23 +100,24 @@
         <span class="pill" id="statoPill">Al lavoro dalle 08:05</span>
         <div class="who" id="who2">Iury Fichera</div>
         <div class="sub" id="comm2" style="margin-top:4px"></div>
+        <div class="sub" id="oggiRiep" style="margin-top:6px"></div>
       </div>
-      <div class="label">Durante la giornata</div>
+      <div class="label" id="lblDurante">Durante la giornata</div>
       <div class="row">
-        <button class="big b-amber" onclick="timbra('PAUSA')">⏸ Pausa</button>
-        <button class="big b-blue" onclick="timbra('RIENTRO')">↩ Rientro</button>
+        <button class="big b-amber" id="btnPausa" onclick="timbra('PAUSA')">⏸ Pausa</button>
+        <button class="big b-blue" id="btnRientro" onclick="timbra('RIENTRO')">↩ Rientro</button>
       </div>
-      <button class="big b-rose" onclick="timbra('FINE')">⏹ Fine giornata</button>
-      <button class="big b-ghost" onclick="apriMie()">📋 Le mie ore</button>
+      <button class="big b-rose" id="btnFine" onclick="timbra('FINE')">⏹ Fine giornata</button>
+      <button class="big b-ghost" id="btnMie2" onclick="apriMie()">📋 Le mie ore</button>
     </section>
 
     <!-- LE MIE ORE -->
     <section id="mie" class="hide">
       <div class="card">
-        <div class="label">Le mie ore — ultimi 7 giorni</div>
+        <div class="label" id="lblMie">Le mie ore — ultimi 7 giorni</div>
         <div id="mieList"></div>
       </div>
-      <button class="big b-ghost" onclick="chiudiMie()">← Torna</button>
+      <button class="big b-ghost" id="btnTorna" onclick="chiudiMie()">← Torna</button>
     </section>
 
     <!-- OK -->
@@ -125,7 +127,7 @@
         <div class="who" id="okTitle">Entrata registrata</div>
         <div class="sub" id="okSub" style="margin-top:8px"></div>
         <div style="height:20px"></div>
-        <button class="big b-ghost" onclick="dopoOk()">Continua</button>
+        <button class="big b-ghost" id="btnContinua" onclick="dopoOk()">Continua</button>
       </div>
     </section>
 
@@ -136,7 +138,86 @@
 <script>
   // Backend Velo su Wix (vedi wix-velo/http-functions.js)
   var API='https://www.gesta-cloud.com/_functions';
-  var me=null, foto64=null, comm='', occupato=false, pinCorrente='', schermataPrec='home';
+  var me=null, foto64=null, comm='', occupato=false, pinCorrente='', schermataPrec='home', apOggi=null;
+
+  // --- Lingua madre (campo "lingua" dell'artigiano: IT / ES / RO) ---
+  var T={
+    IT:{ salutoM:'Buongiorno', salutoP:'Buon pomeriggio', salutoS:'Buonasera',
+      benvenuto:'Benvenuto! Scegli lo stand e scatta la foto per iniziare.',
+      lblStand:'1 · Su quale stand sei?', scegli:'— scegli la commessa —',
+      lblFoto:'2 · Foto dello stand', scatta:'Scatta foto stand', rifai:'✓ Foto scattata — tocca per rifare',
+      entrata:'▶ Entrata', mie:'📋 Le mie ore', durante:'Durante la giornata',
+      pausa:'⏸ Pausa', rientro:'↩ Rientro', fine:'⏹ Fine giornata', torna:'← Torna', continua:'Continua',
+      alLavoro:function(h){return 'Al lavoro dalle '+h;}, inPausa:function(h){return 'In pausa dalle '+h;}, rientrato:function(h){return 'Rientrato alle '+h;},
+      commessa:'Commessa', oggi:'Oggi', eEntrata:'Entrata', ePausa:'Pausa', eRientro:'Rientro',
+      okEntrata:'Entrata registrata', okPausa:'Pausa registrata', okRientro:'Rientro registrato', okFine:'Giornata chiusa ✓',
+      uscita:function(h){return 'Uscita ore '+h;}, oreLav:function(o){return o+' ore lavorate';},
+      grazie:function(n){return 'Grazie '+n+', a presto! 👋';},
+      servePrimaCommessa:'Scegli prima la commessa', servePrimaFoto:'Scatta prima la foto dello stand',
+      carico:'Un attimo, carico…', nessuna:'Nessuna timbratura negli ultimi 7 giorni.',
+      inCorso:'in corso', registrata:'✓ registrata', approvata:'✓✓ approvata', dalle:'dalle', ore:'ore',
+      titoloMie:'Le mie ore — ultimi 7 giorni',
+      errRete:'Non riesco a collegarmi. Controlla la connessione e riprova.' },
+    ES:{ salutoM:'¡Buenos días!', salutoP:'¡Buenas tardes!', salutoS:'¡Buenas noches!',
+      benvenuto:'¡Bienvenido! Elige el stand y haz la foto para empezar.',
+      lblStand:'1 · ¿En qué stand estás?', scegli:'— elige el proyecto —',
+      lblFoto:'2 · Foto del stand', scatta:'Haz una foto del stand', rifai:'✓ Foto hecha — toca para repetir',
+      entrata:'▶ Entrada', mie:'📋 Mis horas', durante:'Durante el día',
+      pausa:'⏸ Pausa', rientro:'↩ Vuelta', fine:'⏹ Fin del día', torna:'← Volver', continua:'Continuar',
+      alLavoro:function(h){return 'Trabajando desde las '+h;}, inPausa:function(h){return 'En pausa desde las '+h;}, rientrato:function(h){return 'De vuelta a las '+h;},
+      commessa:'Proyecto', oggi:'Hoy', eEntrata:'Entrada', ePausa:'Pausa', eRientro:'Vuelta',
+      okEntrata:'Entrada registrada', okPausa:'Pausa registrada', okRientro:'Vuelta registrada', okFine:'Día cerrado ✓',
+      uscita:function(h){return 'Salida a las '+h;}, oreLav:function(o){return o+' horas trabajadas';},
+      grazie:function(n){return '¡Gracias '+n+', hasta pronto! 👋';},
+      servePrimaCommessa:'Primero elige el proyecto', servePrimaFoto:'Primero haz la foto del stand',
+      carico:'Un momento…', nessuna:'Sin fichajes en los últimos 7 días.',
+      inCorso:'en curso', registrata:'✓ registrada', approvata:'✓✓ aprobada', dalle:'desde las', ore:'horas',
+      titoloMie:'Mis horas — últimos 7 días',
+      errRete:'No puedo conectarme. Comprueba la conexión y vuelve a intentarlo.' },
+    RO:{ salutoM:'Bună dimineața!', salutoP:'Bună ziua!', salutoS:'Bună seara!',
+      benvenuto:'Bine ai venit! Alege standul și fă poza ca să începi.',
+      lblStand:'1 · La ce stand ești?', scegli:'— alege comanda —',
+      lblFoto:'2 · Poza standului', scatta:'Fă o poză standului', rifai:'✓ Poză făcută — atinge ca să refaci',
+      entrata:'▶ Intrare', mie:'📋 Orele mele', durante:'În timpul zilei',
+      pausa:'⏸ Pauză', rientro:'↩ Revenire', fine:'⏹ Sfârșit de zi', torna:'← Înapoi', continua:'Continuă',
+      alLavoro:function(h){return 'La lucru de la '+h;}, inPausa:function(h){return 'În pauză de la '+h;}, rientrato:function(h){return 'Revenit la '+h;},
+      commessa:'Comanda', oggi:'Azi', eEntrata:'Intrare', ePausa:'Pauză', eRientro:'Revenire',
+      okEntrata:'Intrare înregistrată', okPausa:'Pauză înregistrată', okRientro:'Revenire înregistrată', okFine:'Zi încheiată ✓',
+      uscita:function(h){return 'Ieșire la '+h;}, oreLav:function(o){return o+' ore lucrate';},
+      grazie:function(n){return 'Mulțumim, '+n+'! Pe curând! 👋';},
+      servePrimaCommessa:'Alege mai întâi comanda', servePrimaFoto:'Fă mai întâi poza standului',
+      carico:'O clipă…', nessuna:'Nicio pontare în ultimele 7 zile.',
+      inCorso:'în curs', registrata:'✓ înregistrată', approvata:'✓✓ aprobată', dalle:'de la', ore:'ore',
+      titoloMie:'Orele mele — ultimele 7 zile',
+      errRete:'Nu mă pot conecta. Verifică conexiunea și încearcă din nou.' }
+  };
+  var L=T.IT;
+
+  function saluto(){
+    var h=new Date().getHours();
+    return h<13 ? L.salutoM : (h<18 ? L.salutoP : L.salutoS);
+  }
+  // applica la lingua dell'artigiano a tutta la pagina (dopo il login)
+  function traduci(){
+    L = T[String((me&&me.lingua)||'IT').toUpperCase()] || T.IT;
+    document.getElementById('saluto').textContent=saluto();
+    document.getElementById('lblStand').textContent=L.lblStand;
+    document.getElementById('optScegli').textContent=L.scegli;
+    document.getElementById('lblFoto').textContent=L.lblFoto;
+    document.getElementById('photoTxt').textContent=foto64?L.rifai:L.scatta;
+    document.getElementById('btnEntrata').textContent=L.entrata;
+    document.getElementById('btnMie1').textContent=L.mie;
+    document.getElementById('btnMie2').textContent=L.mie;
+    document.getElementById('lblDurante').textContent=L.durante;
+    document.getElementById('btnPausa').textContent=L.pausa;
+    document.getElementById('btnRientro').textContent=L.rientro;
+    document.getElementById('btnFine').textContent=L.fine;
+    document.getElementById('lblMie').textContent=L.titoloMie;
+    document.getElementById('btnTorna').textContent=L.torna;
+    document.getElementById('btnContinua').textContent=L.continua;
+    document.getElementById('benvenuto').textContent=L.benvenuto;
+  }
+  function numOre(o){ return String(o).replace('.',','); }
 
   function show(id){ ['login','home','attivo','ok','mie'].forEach(function(s){ document.getElementById(s).classList.toggle('hide', s!==id); }); window.scrollTo(0,0); }
 
@@ -147,7 +228,7 @@
       return r.json().catch(function(){ throw new Error('Risposta non valida (HTTP '+r.status+')'); });
     });
   }
-  function erroreRete(){ alert('Non riesco a collegarmi. Controlla la connessione e riprova.'); }
+  function erroreRete(){ alert(L.errRete); }
 
   function entra(){
     if(occupato) return;
@@ -158,19 +239,26 @@
     chiama('POST','/login',{pin:p}).then(function(res){
       if(!res.ok){ alert(res.error||'PIN non valido'); return; }
       me=res.artigiano; pinCorrente=p;
+      traduci();
       document.getElementById('who').textContent=me.nome;
       document.getElementById('who2').textContent=me.nome;
-      if(res.aperta){ comm=res.aperta.commessaCodice||''; mostraStato(res.aperta); show('attivo'); }
-      else { caricaCommesse(); show('home'); }
+      if(res.aperta){ apOggi=res.aperta; comm=apOggi.commessaCodice||''; mostraStato(apOggi); show('attivo'); }
+      else { apOggi=null; caricaCommesse(); show('home'); }
     }).catch(erroreRete).finally(function(){ occupato=false; btn.textContent='Entra'; });
   }
 
+  // "situazione in corso": pillola di stato + riepilogo delle timbrate di oggi
   function mostraStato(ap){
     var pill=document.getElementById('statoPill');
-    if(ap.pausa && !ap.rientro) pill.textContent='In pausa dalle '+ap.pausa;
-    else if(ap.rientro) pill.textContent='Rientrato alle '+ap.rientro;
-    else pill.textContent='Al lavoro dalle '+(ap.entrata||'');
-    document.getElementById('comm2').textContent=comm?('Commessa: '+comm):'';
+    if(ap.pausa && !ap.rientro) pill.textContent=L.inPausa(ap.pausa);
+    else if(ap.rientro) pill.textContent=L.rientrato(ap.rientro);
+    else pill.textContent=L.alLavoro(ap.entrata||'');
+    document.getElementById('comm2').textContent=comm?(L.commessa+': '+comm):'';
+    var pezzi=[];
+    if(ap.entrata) pezzi.push(L.eEntrata+' '+ap.entrata);
+    if(ap.pausa) pezzi.push(L.ePausa+' '+ap.pausa);
+    if(ap.rientro) pezzi.push(L.eRientro+' '+ap.rientro);
+    document.getElementById('oggiRiep').textContent=pezzi.length?(L.oggi+': '+pezzi.join(' · ')):'';
   }
 
   function caricaCommesse(){
@@ -200,7 +288,7 @@
       URL.revokeObjectURL(img.src);
       var pv=document.getElementById('preview'); pv.src=foto64; pv.style.display='block';
       document.getElementById('photoBtn').classList.add('has');
-      document.getElementById('photoTxt').textContent='✓ Foto scattata — tocca per rifare';
+      document.getElementById('photoTxt').textContent=L.rifai;
     };
     img.src=URL.createObjectURL(inp.files[0]);
   }
@@ -210,8 +298,8 @@
     var body={tipo:tipo, artigianoId:me.id, artigianoNome:me.nome};
     if(tipo==='ENTRATA'){
       comm=document.getElementById('commessa').value;
-      if(!comm){ alert('Scegli prima la commessa'); return; }
-      if(!foto64){ alert('Scatta prima la foto dello stand'); return; }
+      if(!comm){ alert(L.servePrimaCommessa); return; }
+      if(!foto64){ alert(L.servePrimaFoto); return; }
       body.commessaCodice=comm; body.fotoBase64=foto64;
     }
     occupato=true;
@@ -219,15 +307,18 @@
       if(!res.ok){ alert(res.error||'Non sono riuscito a registrare. Riprova.'); return; }
       var ora=res.ora||'';
       if(tipo==='ENTRATA'){
-        document.getElementById('comm2').textContent='Commessa: '+comm;
-        document.getElementById('statoPill').textContent='Al lavoro dalle '+ora;
-        foto64=null;
-        okScreen('Entrata registrata', comm+' · ore '+ora, 'attivo');
-      } else if(tipo==='PAUSA'){ document.getElementById('statoPill').textContent='In pausa dalle '+ora; okScreen('Pausa registrata','ore '+ora,'attivo');
-      } else if(tipo==='RIENTRO'){ document.getElementById('statoPill').textContent='Rientrato alle '+ora; okScreen('Rientro registrato','ore '+ora,'attivo');
+        apOggi={entrata:ora}; foto64=null;
+        mostraStato(apOggi);
+        okScreen(L.okEntrata, comm+' · '+ora, 'attivo');
+      } else if(tipo==='PAUSA'){ apOggi=apOggi||{}; apOggi.pausa=ora; mostraStato(apOggi); okScreen(L.okPausa, ora, 'attivo');
+      } else if(tipo==='RIENTRO'){ apOggi=apOggi||{}; apOggi.rientro=ora; mostraStato(apOggi); okScreen(L.okRientro, ora, 'attivo');
       } else if(tipo==='FINE'){
-        var oreTxt=(res.oreNette!=null)?(' · '+res.oreNette+' ore'):'';
-        okScreen('Giornata chiusa','Uscita ore '+ora+oreTxt,'login');
+        // messaggio di chiusura nella lingua dell'artigiano, con le ore della giornata
+        var sub=L.uscita(ora);
+        if(res.oreNette!=null) sub+=' · '+L.oreLav(numOre(res.oreNette));
+        sub+=' — '+L.grazie((me.nome||'').split(' ')[0]);
+        okScreen(L.okFine, sub, 'login');
+        apOggi=null;
         setTimeout(function(){ document.getElementById('pin').value=''; me=null; pinCorrente=''; },50);
       }
     }).catch(erroreRete).finally(function(){ occupato=false; });
@@ -242,22 +333,22 @@
   function apriMie(){
     schermataPrec = document.getElementById('home').classList.contains('hide') ? 'attivo' : 'home';
     var box=document.getElementById('mieList');
-    box.innerHTML='<div class="demo">Un attimo, carico…</div>';
+    box.innerHTML='<div class="demo">'+L.carico+'</div>';
     show('mie');
     chiama('POST','/mie',{pin:pinCorrente}).then(function(res){
       if(!res.ok){ box.innerHTML='<div class="demo">'+(res.error||'Errore')+'</div>'; return; }
-      if(!res.giorni.length){ box.innerHTML='<div class="demo">Nessuna timbratura negli ultimi 7 giorni.</div>'; return; }
+      if(!res.giorni.length){ box.innerHTML='<div class="demo">'+L.nessuna+'</div>'; return; }
       box.innerHTML = res.giorni.map(function(g){
         var badge = g.stato==='in corso'
-          ? '<span class="b-st st-corso">in corso</span>'
-          : (g.approvata ? '<span class="b-st st-app">✓✓ approvata</span>' : '<span class="b-st st-reg">✓ registrata</span>');
+          ? '<span class="b-st st-corso">'+L.inCorso+'</span>'
+          : (g.approvata ? '<span class="b-st st-app">'+L.approvata+'</span>' : '<span class="b-st st-reg">'+L.registrata+'</span>');
         var ore = (g.stato==='chiuso' && g.oreNette!=null)
-          ? String(g.oreNette).replace('.',',')+' ore'
-          : (g.entrata ? 'dalle '+g.entrata : '');
+          ? numOre(g.oreNette)+' '+L.ore
+          : (g.entrata ? L.dalle+' '+g.entrata : '');
         return '<div class="mia-riga"><div><b>'+formattaData(g.data)+'</b> · '+(g.commessaCodice||'')+
                '<div class="quando">'+ore+'</div></div>'+badge+'</div>';
       }).join('');
-    }).catch(function(){ box.innerHTML='<div class="demo">Non riesco a collegarmi. Riprova.</div>'; });
+    }).catch(function(){ box.innerHTML='<div class="demo">'+L.errRete+'</div>'; });
   }
   function chiudiMie(){ show(schermataPrec); }
 </script>

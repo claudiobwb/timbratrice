@@ -124,8 +124,10 @@
             <label class="chk" style="margin-top:14px"><input type="checkbox" id="a_ufficio"> accesso ufficio</label>
             <button class="b-em" onclick="salvaArt()">💾 Salva</button>
             <button class="b-ghost" onclick="pulisciArt()">Nuovo</button>
+            <button class="b-ghost" onclick="document.getElementById('impArt').click()">📥 Importa Excel</button>
+            <input type="file" id="impArt" accept=".xlsx,.xls" class="hide" onchange="importaArtigiani(this)">
           </div>
-          <div class="demo" style="text-align:left;padding:8px 0 0;">Il PIN è la chiave personale: deve essere DIVERSO per ogni persona (il salvataggio lo controlla).</div>
+          <div class="demo" style="text-align:left;padding:8px 0 0;">Il PIN è la chiave personale: deve essere DIVERSO per ogni persona (il salvataggio lo controlla).<br>Importa Excel: legge le colonne <b>Nome, Cognome, Telefono, Lingua</b> (es. ELENCO ARTIGIANI.xlsx); ai nuovi assegna un PIN automatico.</div>
         </div>
         <div class="card" style="overflow-x:auto;">
           <table>
@@ -147,7 +149,10 @@
             <label class="chk" style="margin-top:14px"><input type="checkbox" id="c_attivo" checked> attiva (nel menu artigiani)</label>
             <button class="b-em" onclick="salvaCom()">💾 Salva</button>
             <button class="b-ghost" onclick="pulisciCom()">Nuova</button>
+            <button class="b-ghost" onclick="document.getElementById('impCom').click()">📥 Importa Excel</button>
+            <input type="file" id="impCom" accept=".xlsx,.xls" class="hide" onchange="importaCommesse(this)">
           </div>
+          <div class="demo" style="text-align:left;padding:8px 0 0;">Importa Excel: legge il foglio <b>elenco</b> con le colonne <b>numero, cliente, EVENTO, luogo, stato</b> (es. ELENCO COMMESSE.xlsx); attiva nel menu solo le commesse con stato "confermato".</div>
         </div>
         <div class="card" style="overflow-x:auto;">
           <table>
@@ -359,6 +364,111 @@
       if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'Errore nel salvataggio'); return; }
       pulisciCom(); aggiorna();
     }).catch(erroreRete);
+  }
+
+  // ---- IMPORTA DA EXCEL (SheetJS caricato dal CDN solo quando serve) ----
+  function conXLSX(poi){
+    if(window.XLSX){ poi(); return; }
+    var s=document.createElement('script');
+    s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+    s.onload=poi;
+    s.onerror=function(){ alert('Non riesco a scaricare il lettore Excel. Controlla la connessione e riprova.'); };
+    document.head.appendChild(s);
+  }
+  function leggiFoglio(file, nomePreferito, poi){
+    conXLSX(function(){
+      var fr=new FileReader();
+      fr.onload=function(e){
+        try{
+          var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+          var foglio = wb.SheetNames.find(function(n){return n.trim().toLowerCase()===nomePreferito;}) || wb.SheetNames[0];
+          poi(XLSX.utils.sheet_to_json(wb.Sheets[foglio],{defval:''}));
+        }catch(err){ alert('Non riesco a leggere il file: '+err.message); }
+      };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+  // valore della prima colonna il cui nome combacia (ignora maiuscole/spazi)
+  function colonna(riga, nomi){
+    var chiavi=Object.keys(riga);
+    for(var i=0;i<nomi.length;i++) for(var j=0;j<chiavi.length;j++)
+      if(chiavi[j].trim().toLowerCase()===nomi[i]) return riga[chiavi[j]];
+    return '';
+  }
+  function pinLibero(usati){
+    for(var t=0;t<5000;t++){
+      var p=String(1000+Math.floor(Math.random()*9000));
+      if(!usati[p]){ usati[p]=true; return p; }
+    }
+    return '';
+  }
+  // salva una riga alla volta (il server controlla i PIN), poi riepiloga
+  function salvaInSerie(lista, fnSalva, fine){
+    var okN=0, errori=[];
+    (function uno(i){
+      if(i>=lista.length){ fine(okN, errori); return; }
+      fnSalva(lista[i]).then(function(res){
+        if(res.ok) okN++; else errori.push(lista[i]._eti+': '+(res.error||'errore'));
+        uno(i+1);
+      }).catch(function(){ errori.push(lista[i]._eti+': errore di rete'); uno(i+1); });
+    })(0);
+  }
+
+  function importaArtigiani(inp){
+    var f=inp.files && inp.files[0]; inp.value=''; if(!f) return;
+    leggiFoglio(f, 'artigiani', function(righe){
+      var usati={}; (db.artigiani||[]).forEach(function(a){ usati[String(a.pin)]=true; });
+      var nuovi=[], aggiornati=[];
+      righe.forEach(function(r){
+        var nome=(String(colonna(r,['nome'])).trim()+' '+String(colonna(r,['cognome'])).trim()).trim();
+        if(!nome) return;
+        var tel=String(colonna(r,['telefono','tel','cellulare'])).trim();
+        var lin=String(colonna(r,['lingua'])).trim().toUpperCase()||'IT';
+        if(['IT','ES','RO'].indexOf(lin)<0) lin='IT';
+        var gia=(db.artigiani||[]).find(function(a){ return String(a.nome).trim().toLowerCase()===nome.toLowerCase(); });
+        if(gia) aggiornati.push({_eti:nome, id:gia.id, nome:nome, telefono:tel||gia.telefono||'', lingua:lin, pin:gia.pin, attivo:gia.attivo, ruolo:gia.ruolo||''});
+        else nuovi.push({_eti:nome, id:null, nome:nome, telefono:tel, lingua:lin, pin:pinLibero(usati), attivo:true, ruolo:''});
+      });
+      if(!nuovi.length && !aggiornati.length){ alert('Nel file non ho trovato righe con Nome/Cognome.'); return; }
+      if(!confirm('Dal file "'+f.name+'":\n· '+nuovi.length+' artigiani NUOVI (PIN generato automaticamente)\n· '+aggiornati.length+' già presenti (aggiorno telefono e lingua, il PIN resta)\n\nProcedo?')) return;
+      salvaInSerie(nuovi.concat(aggiornati), function(a){
+        return chiama('POST','/salvaArtigiano',{pin:pinU, artigiano:{id:a.id,nome:a.nome,telefono:a.telefono,lingua:a.lingua,pin:a.pin,attivo:a.attivo,ruolo:a.ruolo}});
+      }, function(okN,errori){
+        var m='Import finito: '+okN+' salvati.';
+        if(nuovi.length) m+='\n\nPIN NUOVI da consegnare:\n'+nuovi.map(function(n){return n.nome+' → '+n.pin;}).join('\n');
+        if(errori.length) m+='\n\nProblemi:\n'+errori.join('\n');
+        alert(m); aggiorna();
+      });
+    });
+  }
+
+  function importaCommesse(inp){
+    var f=inp.files && inp.files[0]; inp.value=''; if(!f) return;
+    leggiFoglio(f, 'elenco', function(righe){
+      var nuove=[], aggiornate=[];
+      righe.forEach(function(r){
+        var codice=String(colonna(r,['numero','codice','commessa'])).trim();
+        if(!/^\d{3,}$/.test(codice)) return;
+        var descr=String(colonna(r,['evento','descrizione'])).trim();
+        var luogo=String(colonna(r,['luogo','città','citta'])).trim();
+        if(luogo && descr.toLowerCase().indexOf(luogo.toLowerCase())<0) descr=(descr?descr+' ':'')+'('+luogo+')';
+        var stato=String(colonna(r,['stato'])).trim().toLowerCase();
+        var gia=(db.commesse||[]).find(function(c){ return String(c.codice).trim()===codice; });
+        var com={_eti:codice, id:gia?gia.id:null, codice:codice,
+                 descrizione:descr, cliente:String(colonna(r,['cliente'])).trim(),
+                 attivo:stato.indexOf('conferm')===0};
+        if(gia) aggiornate.push(com); else nuove.push(com);
+      });
+      if(!nuove.length && !aggiornate.length){ alert('Nel file non ho trovato commesse (colonna "numero").'); return; }
+      if(!confirm('Dal file "'+f.name+'":\n· '+nuove.length+' commesse NUOVE\n· '+aggiornate.length+' da aggiornare\n(nel menu artigiani vanno solo quelle con stato "confermato")\n\nProcedo?')) return;
+      salvaInSerie(nuove.concat(aggiornate), function(c){
+        return chiama('POST','/salvaCommessa',{pin:pinU, commessa:{id:c.id,codice:c.codice,descrizione:c.descrizione,cliente:c.cliente,attivo:c.attivo}});
+      }, function(okN,errori){
+        var m='Import finito: '+okN+' salvate.';
+        if(errori.length) m+='\n\nProblemi:\n'+errori.join('\n');
+        alert(m); aggiorna();
+      });
+    });
   }
 
   // auto-login se il PIN è già in sessione
