@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timbratrice Gesta — Ufficio</title>
+<style>
+  :root{ --bg:#09090b; --card:#18181b; --line:#27272a; --txt:#e4e4e7; --muted:#a1a1aa; --em:#10b981; --em2:#34d399; --amber:#f59e0b; --rose:#f43f5e; }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--txt); font-family:-apple-system,Segoe UI,Roboto,sans-serif; min-height:100vh;}
+  .wrap{max-width:1080px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
+  header{padding:16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; position:sticky; top:0; background:var(--bg); z-index:5;}
+  .logo{width:40px;height:40px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;color:#09090b;font-size:13px;}
+  h1{font-size:15px; margin:0; font-weight:900; letter-spacing:.5px; text-transform:uppercase;}
+  .sub{font-size:10px;color:var(--muted);font-family:monospace;}
+  .badge{margin-left:auto; font-size:9px; font-weight:800; background:rgba(16,185,129,.15); color:var(--em2); border:1px solid rgba(16,185,129,.3); padding:3px 7px; border-radius:6px; text-transform:uppercase;}
+  main{flex:1; padding:20px 16px; display:flex; flex-direction:column; gap:16px;}
+  .label{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-family:monospace; margin-bottom:8px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px;}
+  input,select{padding:10px 12px; background:#09090b; border:1px solid var(--line); border-radius:10px; color:#fff; font-size:14px; outline:none;}
+  input:focus,select:focus{border-color:var(--em);}
+  .pin{text-align:center; letter-spacing:10px; font-size:24px; width:100%;}
+  button{cursor:pointer; border:none; border-radius:10px; font-weight:800; font-size:13px; padding:10px 16px;}
+  .b-em{background:var(--em); color:#09090b;}
+  .b-ghost{background:#09090b; color:var(--txt); border:1px solid var(--line);}
+  .b-mini{font-size:11px; padding:6px 10px;}
+  .big{width:100%; padding:16px; font-size:17px; text-transform:uppercase; letter-spacing:1px; border-radius:14px;}
+  .hide{display:none!important;}
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .tabs{display:flex; gap:6px; margin-right:auto;}
+  .tab{background:#09090b; border:1px solid var(--line); color:var(--muted); border-radius:10px; padding:10px 16px; font-weight:800;}
+  .tab.on{background:var(--em); color:#09090b; border-color:var(--em);}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-family:monospace; text-align:left; padding:8px 8px; border-bottom:1px solid var(--line);}
+  td{padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr.cliccabile{cursor:pointer;}
+  tr.cliccabile:hover td{background:#1f1f23;}
+  .tot{display:flex; flex-wrap:wrap; gap:10px;}
+  .tot .chip{background:#09090b; border:1px solid var(--line); border-radius:12px; padding:10px 14px; font-size:13px;}
+  .tot .chip b{color:var(--em2);}
+  .b-st{display:inline-block;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;white-space:nowrap;}
+  .st-app{background:rgba(16,185,129,.15);color:var(--em2);border:1px solid rgba(16,185,129,.35);}
+  .st-reg{background:#27272a;color:var(--txt);border:1px solid var(--line);}
+  .st-corso{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.35);}
+  .st-off{background:#27272a;color:var(--muted);border:1px solid var(--line);}
+  .form-riga{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .form-riga label{font-size:11px; color:var(--muted); display:flex; flex-direction:column; gap:4px;}
+  .chk{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--txt);}
+  .chk input{width:18px; height:18px; accent-color:var(--em);}
+  .approva-chk{width:20px; height:20px; accent-color:var(--em); cursor:pointer;}
+  .demo{font-size:11px;color:#71717a;text-align:center;padding:12px;font-family:monospace;}
+  a{color:var(--em2);}
+  @media (max-width:700px){ .colmob{display:none;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">GA</div>
+    <div>
+      <h1>Timbratrice <span style="color:var(--em2)">Gesta</span> · Ufficio</h1>
+      <div class="sub">centro di controllo operatore</div>
+    </div>
+    <span class="badge">Beta 1</span>
+  </header>
+  <main>
+
+    <!-- LOGIN OPERATORE -->
+    <section id="login">
+      <div class="card" style="max-width:420px; margin:40px auto;">
+        <div class="label">PIN operatore</div>
+        <input id="pinU" class="pin" inputmode="numeric" maxlength="8" placeholder="••••••">
+        <div style="height:14px"></div>
+        <button id="btnEntra" class="b-em big" onclick="entraUff()">Entra</button>
+      </div>
+    </section>
+
+    <!-- APP -->
+    <section id="app" class="hide">
+      <div class="card toolbar">
+        <div class="tabs">
+          <button class="tab on" id="tab-btn-ore" onclick="vai('ore')">🕒 Ore</button>
+          <button class="tab" id="tab-btn-artigiani" onclick="vai('artigiani')">👷 Artigiani</button>
+          <button class="tab" id="tab-btn-commesse" onclick="vai('commesse')">🎪 Commesse</button>
+        </div>
+        <label style="font-size:11px;color:var(--muted)">dal <input type="date" id="dal"></label>
+        <label style="font-size:11px;color:var(--muted)">al <input type="date" id="al"></label>
+        <button class="b-ghost" onclick="aggiorna()">↻ Aggiorna</button>
+        <button class="b-ghost" onclick="scaricaCsv()">⬇ CSV</button>
+        <button class="b-ghost" onclick="esci()">Esci</button>
+      </div>
+
+      <!-- TAB ORE -->
+      <div id="tab-ore">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="label">Totale ore nel periodo (giornate chiuse)</div>
+          <div class="tot" id="totali"></div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th>Data</th><th>Artigiano</th><th>Commessa</th>
+              <th>Entrata</th><th class="colmob">Pausa</th><th class="colmob">Rientro</th><th>Uscita</th>
+              <th>Ore</th><th class="colmob">Foto</th><th>Stato</th><th>OK</th>
+            </tr></thead>
+            <tbody id="oreBody"></tbody>
+          </table>
+          <div id="oreVuoto" class="demo hide">Nessuna timbratura nel periodo scelto.</div>
+        </div>
+      </div>
+
+      <!-- TAB ARTIGIANI -->
+      <div id="tab-artigiani" class="hide">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="label" id="artFormTitolo">Nuovo artigiano</div>
+          <div class="form-riga">
+            <input type="hidden" id="a_id">
+            <label>Nome e cognome<input id="a_nome" style="width:200px"></label>
+            <label>Telefono<input id="a_tel" style="width:140px"></label>
+            <label>Lingua<select id="a_lingua"><option>IT</option><option>ES</option><option>RO</option></select></label>
+            <label>PIN (4-8 cifre)<input id="a_pin" inputmode="numeric" maxlength="8" style="width:110px"></label>
+            <label class="chk" style="margin-top:14px"><input type="checkbox" id="a_attivo" checked> attivo</label>
+            <label class="chk" style="margin-top:14px"><input type="checkbox" id="a_ufficio"> accesso ufficio</label>
+            <button class="b-em" onclick="salvaArt()">💾 Salva</button>
+            <button class="b-ghost" onclick="pulisciArt()">Nuovo</button>
+          </div>
+          <div class="demo" style="text-align:left;padding:8px 0 0;">Il PIN è la chiave personale: deve essere DIVERSO per ogni persona (il salvataggio lo controlla).</div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Nome</th><th class="colmob">Telefono</th><th>Lingua</th><th>PIN</th><th>Ruolo</th><th>Stato</th></tr></thead>
+            <tbody id="artBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB COMMESSE -->
+      <div id="tab-commesse" class="hide">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="label" id="comFormTitolo">Nuova commessa</div>
+          <div class="form-riga">
+            <input type="hidden" id="c_id">
+            <label>Codice<input id="c_codice" style="width:100px"></label>
+            <label>Descrizione (evento, città)<input id="c_descr" style="width:280px"></label>
+            <label>Cliente<input id="c_cliente" style="width:200px"></label>
+            <label class="chk" style="margin-top:14px"><input type="checkbox" id="c_attivo" checked> attiva (nel menu artigiani)</label>
+            <button class="b-em" onclick="salvaCom()">💾 Salva</button>
+            <button class="b-ghost" onclick="pulisciCom()">Nuova</button>
+          </div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Codice</th><th>Descrizione</th><th class="colmob">Cliente</th><th>Stato</th></tr></thead>
+            <tbody id="comBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </main>
+  <div class="demo">Timbratrice Gesta · ufficio · i dati vivono su gesta-cloud.com</div>
+</div>
+
+<script>
+  var API='https://www.gesta-cloud.com/_functions';
+  var pinU = sessionStorage.getItem('pinUfficio') || '';
+  var db = { timbrature:[], artigiani:[], commesse:[] };
+
+  function chiama(metodo, path, body){
+    var opt={ method:metodo };
+    if(body){ opt.headers={'Content-Type':'application/json'}; opt.body=JSON.stringify(body); }
+    return fetch(API+path, opt).then(function(r){
+      return r.json().catch(function(){ throw new Error('Risposta non valida (HTTP '+r.status+')'); });
+    });
+  }
+  function erroreRete(){ alert('Non riesco a collegarmi. Controlla la connessione e riprova.'); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtData(d){ var p=String(d||'').split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0].slice(2) : d; }
+  function oreTxt(n){ return (n==null?'':String(n).replace('.',',')); }
+
+  // date di default: ultimi 7 giorni
+  (function(){
+    function iso(t){ var d=new Date(t); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+    document.getElementById('al').value = iso(Date.now());
+    document.getElementById('dal').value = iso(Date.now()-6*86400000);
+  })();
+
+  function entraUff(){
+    var p=document.getElementById('pinU').value.trim();
+    if(p.length<4){ alert('Inserisci il PIN operatore'); return; }
+    var btn=document.getElementById('btnEntra'); btn.textContent='Un attimo…';
+    carica(p, function(ok){
+      btn.textContent='Entra';
+      if(ok){ pinU=p; sessionStorage.setItem('pinUfficio', p);
+        document.getElementById('login').classList.add('hide');
+        document.getElementById('app').classList.remove('hide'); }
+    });
+  }
+
+  function carica(pin, fine){
+    chiama('POST','/registro',{pin:pin, dal:document.getElementById('dal').value, al:document.getElementById('al').value})
+      .then(function(res){
+        if(!res.ok){ alert(res.error||'PIN non valido'); fine&&fine(false); return; }
+        db = res; renderTutto(); fine&&fine(true);
+      }).catch(function(){ erroreRete(); fine&&fine(false); });
+  }
+  function aggiorna(){ carica(pinU); }
+
+  function esci(){ sessionStorage.removeItem('pinUfficio'); location.reload(); }
+
+  function vai(tab){
+    ['ore','artigiani','commesse'].forEach(function(t){
+      document.getElementById('tab-'+t).classList.toggle('hide', t!==tab);
+      document.getElementById('tab-btn-'+t).classList.toggle('on', t===tab);
+    });
+  }
+
+  function renderTutto(){ renderOre(); renderArtigiani(); renderCommesse(); }
+
+  // ---- ORE ----
+  function renderOre(){
+    var tt=db.timbrature||[];
+    // totali per artigiano (solo giornate chiuse)
+    var tot={};
+    tt.forEach(function(t){ if(t.stato==='chiuso'){ tot[t.artigianoNome]=(tot[t.artigianoNome]||0)+(t.oreNette||0); } });
+    var chips=Object.keys(tot).sort().map(function(n){
+      return '<div class="chip">'+esc(n)+' · <b>'+oreTxt(Math.round(tot[n]*100)/100)+' ore</b></div>';
+    });
+    document.getElementById('totali').innerHTML = chips.length?chips.join(''):'<div class="demo" style="padding:0">Nessuna giornata chiusa nel periodo.</div>';
+
+    var body=document.getElementById('oreBody');
+    document.getElementById('oreVuoto').classList.toggle('hide', tt.length>0);
+    body.innerHTML = tt.map(function(t){
+      var st = t.stato==='in corso' ? '<span class="b-st st-corso">in corso</span>' : '<span class="b-st st-reg">chiusa</span>';
+      var foto = t.foto ? '<a href="'+esc(t.foto)+'" target="_blank" rel="noopener">📷</a>' : '';
+      return '<tr>'+
+        '<td>'+fmtData(t.data)+'</td><td><b>'+esc(t.artigianoNome)+'</b></td><td>'+esc(t.commessaCodice)+'</td>'+
+        '<td>'+esc(t.entrata||'')+'</td><td class="colmob">'+esc(t.pausa||'')+'</td><td class="colmob">'+esc(t.rientro||'')+'</td><td>'+esc(t.uscita||'')+'</td>'+
+        '<td><b>'+oreTxt(t.stato==='chiuso'?t.oreNette:'')+'</b></td><td class="colmob">'+foto+'</td><td>'+st+'</td>'+
+        '<td><input type="checkbox" class="approva-chk" '+(t.approvata?'checked':'')+' onchange="approva(\''+t.id+'\', this)"></td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function approva(id, chk){
+    chk.disabled=true;
+    chiama('POST','/approva',{pin:pinU, id:id, approvata:chk.checked}).then(function(res){
+      chk.disabled=false;
+      if(!res.ok){ alert(res.error||'Errore'); chk.checked=!chk.checked; return; }
+      var t=(db.timbrature||[]).find(function(x){return x.id===id;}); if(t) t.approvata=res.approvata;
+    }).catch(function(){ chk.disabled=false; chk.checked=!chk.checked; erroreRete(); });
+  }
+
+  function scaricaCsv(){
+    var righe=[['Data','Artigiano','Commessa','Entrata','Pausa','Rientro','Uscita','Ore nette','Stato','Approvata']];
+    (db.timbrature||[]).forEach(function(t){
+      righe.push([t.data, t.artigianoNome, t.commessaCodice, t.entrata||'', t.pausa||'', t.rientro||'', t.uscita||'', oreTxt(t.stato==='chiuso'?t.oreNette:''), t.stato, t.approvata?'SI':'NO']);
+    });
+    var csv='﻿'+righe.map(function(r){ return r.map(function(v){ return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'; }).join(';'); }).join('\r\n');
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    a.download='ore_'+document.getElementById('dal').value+'_'+document.getElementById('al').value+'.csv';
+    a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  }
+
+  // ---- ARTIGIANI ----
+  function renderArtigiani(){
+    var body=document.getElementById('artBody');
+    body.innerHTML=(db.artigiani||[]).map(function(a,i){
+      var st=a.attivo?'<span class="b-st st-app">attivo</span>':'<span class="b-st st-off">disattivo</span>';
+      var ru=a.ruolo==='ufficio'?'<span class="b-st st-corso">ufficio</span>':esc(a.ruolo||'');
+      return '<tr class="cliccabile" onclick="editArt('+i+')"><td><b>'+esc(a.nome)+'</b></td><td class="colmob">'+esc(a.telefono||'')+'</td><td>'+esc(a.lingua||'')+'</td><td>'+esc(a.pin)+'</td><td>'+ru+'</td><td>'+st+'</td></tr>';
+    }).join('');
+  }
+  function editArt(i){
+    var a=db.artigiani[i];
+    document.getElementById('a_id').value=a.id;
+    document.getElementById('a_nome').value=a.nome||'';
+    document.getElementById('a_tel').value=a.telefono||'';
+    document.getElementById('a_lingua').value=(a.lingua||'IT').toUpperCase();
+    document.getElementById('a_pin').value=a.pin||'';
+    document.getElementById('a_attivo').checked=!!a.attivo;
+    document.getElementById('a_ufficio').checked=(a.ruolo==='ufficio');
+    document.getElementById('a_ufficio').dataset.ruoloPrec=a.ruolo||'';
+    document.getElementById('artFormTitolo').textContent='Modifica: '+(a.nome||'');
+    window.scrollTo(0,0);
+  }
+  function pulisciArt(){
+    ['a_id','a_nome','a_tel','a_pin'].forEach(function(id){document.getElementById(id).value='';});
+    document.getElementById('a_lingua').value='IT';
+    document.getElementById('a_attivo').checked=true;
+    document.getElementById('a_ufficio').checked=false;
+    document.getElementById('a_ufficio').dataset.ruoloPrec='';
+    document.getElementById('artFormTitolo').textContent='Nuovo artigiano';
+  }
+  function salvaArt(){
+    var uff=document.getElementById('a_ufficio');
+    var ruolo = uff.checked ? 'ufficio' : ((uff.dataset.ruoloPrec==='ufficio') ? '' : (uff.dataset.ruoloPrec||''));
+    var art={ id:document.getElementById('a_id').value||null,
+      nome:document.getElementById('a_nome').value,
+      telefono:document.getElementById('a_tel').value,
+      lingua:document.getElementById('a_lingua').value,
+      pin:document.getElementById('a_pin').value,
+      attivo:document.getElementById('a_attivo').checked,
+      ruolo:ruolo };
+    chiama('POST','/salvaArtigiano',{pin:pinU, artigiano:art}).then(function(res){
+      if(!res.ok){ alert(res.error||'Errore nel salvataggio'); return; }
+      pulisciArt(); aggiorna();
+    }).catch(erroreRete);
+  }
+
+  // ---- COMMESSE ----
+  function renderCommesse(){
+    var body=document.getElementById('comBody');
+    var cc=(db.commesse||[]).slice().sort(function(a,b){ return (b.attivo-a.attivo) || String(a.codice).localeCompare(String(b.codice)); });
+    body.innerHTML=cc.map(function(c){
+      var i=(db.commesse||[]).indexOf(c);
+      var st=c.attivo?'<span class="b-st st-app">attiva</span>':'<span class="b-st st-off">spenta</span>';
+      return '<tr class="cliccabile" onclick="editCom('+i+')"><td><b>'+esc(c.codice)+'</b></td><td>'+esc(c.descrizione||'')+'</td><td class="colmob">'+esc(c.cliente||'')+'</td><td>'+st+'</td></tr>';
+    }).join('');
+  }
+  function editCom(i){
+    var c=db.commesse[i];
+    document.getElementById('c_id').value=c.id;
+    document.getElementById('c_codice').value=c.codice||'';
+    document.getElementById('c_descr').value=c.descrizione||'';
+    document.getElementById('c_cliente').value=c.cliente||'';
+    document.getElementById('c_attivo').checked=!!c.attivo;
+    document.getElementById('comFormTitolo').textContent='Modifica: '+(c.codice||'');
+    window.scrollTo(0,0);
+  }
+  function pulisciCom(){
+    ['c_id','c_codice','c_descr','c_cliente'].forEach(function(id){document.getElementById(id).value='';});
+    document.getElementById('c_attivo').checked=true;
+    document.getElementById('comFormTitolo').textContent='Nuova commessa';
+  }
+  function salvaCom(){
+    var com={ id:document.getElementById('c_id').value||null,
+      codice:document.getElementById('c_codice').value,
+      descrizione:document.getElementById('c_descr').value,
+      cliente:document.getElementById('c_cliente').value,
+      attivo:document.getElementById('c_attivo').checked };
+    chiama('POST','/salvaCommessa',{pin:pinU, commessa:com}).then(function(res){
+      if(!res.ok){ alert(res.error||'Errore nel salvataggio'); return; }
+      pulisciCom(); aggiorna();
+    }).catch(erroreRete);
+  }
+
+  // auto-login se il PIN è già in sessione
+  if(pinU){
+    carica(pinU, function(ok){
+      if(ok){ document.getElementById('login').classList.add('hide'); document.getElementById('app').classList.remove('hide'); }
+      else { sessionStorage.removeItem('pinUfficio'); pinU=''; }
+    });
+  }
+  document.getElementById('pinU').addEventListener('keydown', function(e){ if(e.key==='Enter') entraUff(); });
+</script>
+</body>
+</html>

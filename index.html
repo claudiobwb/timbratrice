@@ -37,6 +37,13 @@
   .ok .tick{width:84px;height:84px;border-radius:50%;background:rgba(16,185,129,.12);border:2px solid var(--em);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:42px;}
   .demo{font-size:10px;color:#71717a;text-align:center;padding:12px;font-family:monospace;}
   .pill{display:inline-block;font-size:11px;padding:4px 10px;border-radius:999px;background:rgba(16,185,129,.12);color:var(--em2);border:1px solid rgba(16,185,129,.3);margin-bottom:6px;}
+  .mia-riga{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line);font-size:14px;}
+  .mia-riga:last-child{border-bottom:none;}
+  .mia-riga .quando{color:var(--muted);font-size:12px;}
+  .b-st{display:inline-block;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;white-space:nowrap;}
+  .st-app{background:rgba(16,185,129,.15);color:var(--em2);border:1px solid rgba(16,185,129,.35);}
+  .st-reg{background:#27272a;color:var(--txt);border:1px solid var(--line);}
+  .st-corso{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.35);}
 </style>
 </head>
 <body>
@@ -83,6 +90,7 @@
         <img id="preview" class="preview">
       </div>
       <button class="big b-em" onclick="timbra('ENTRATA')">▶ Entrata</button>
+      <button class="big b-ghost" onclick="apriMie()">📋 Le mie ore</button>
     </section>
 
     <!-- ATTIVO -->
@@ -98,6 +106,16 @@
         <button class="big b-blue" onclick="timbra('RIENTRO')">↩ Rientro</button>
       </div>
       <button class="big b-rose" onclick="timbra('FINE')">⏹ Fine giornata</button>
+      <button class="big b-ghost" onclick="apriMie()">📋 Le mie ore</button>
+    </section>
+
+    <!-- LE MIE ORE -->
+    <section id="mie" class="hide">
+      <div class="card">
+        <div class="label">Le mie ore — ultimi 7 giorni</div>
+        <div id="mieList"></div>
+      </div>
+      <button class="big b-ghost" onclick="chiudiMie()">← Torna</button>
     </section>
 
     <!-- OK -->
@@ -118,9 +136,9 @@
 <script>
   // Backend Velo su Wix (vedi wix-velo/http-functions.js)
   var API='https://www.gesta-cloud.com/_functions';
-  var me=null, foto64=null, comm='', occupato=false;
+  var me=null, foto64=null, comm='', occupato=false, pinCorrente='', schermataPrec='home';
 
-  function show(id){ ['login','home','attivo','ok'].forEach(function(s){ document.getElementById(s).classList.toggle('hide', s!==id); }); window.scrollTo(0,0); }
+  function show(id){ ['login','home','attivo','ok','mie'].forEach(function(s){ document.getElementById(s).classList.toggle('hide', s!==id); }); window.scrollTo(0,0); }
 
   function chiama(metodo, path, body){
     var opt={ method:metodo };
@@ -139,7 +157,7 @@
     occupato=true; btn.textContent='Un attimo…';
     chiama('POST','/login',{pin:p}).then(function(res){
       if(!res.ok){ alert(res.error||'PIN non valido'); return; }
-      me=res.artigiano;
+      me=res.artigiano; pinCorrente=p;
       document.getElementById('who').textContent=me.nome;
       document.getElementById('who2').textContent=me.nome;
       if(res.aperta){ comm=res.aperta.commessaCodice||''; mostraStato(res.aperta); show('attivo'); }
@@ -210,7 +228,7 @@
       } else if(tipo==='FINE'){
         var oreTxt=(res.oreNette!=null)?(' · '+res.oreNette+' ore'):'';
         okScreen('Giornata chiusa','Uscita ore '+ora+oreTxt,'login');
-        setTimeout(function(){ document.getElementById('pin').value=''; me=null; },50);
+        setTimeout(function(){ document.getElementById('pin').value=''; me=null; pinCorrente=''; },50);
       }
     }).catch(erroreRete).finally(function(){ occupato=false; });
   }
@@ -218,6 +236,30 @@
   var nextAfterOk='attivo';
   function okScreen(t,s,next){ document.getElementById('okTitle').textContent=t; document.getElementById('okSub').textContent=s; nextAfterOk=next; show('ok'); }
   function dopoOk(){ show(nextAfterOk); }
+
+  // --- Le mie ore (ultimi 7 giorni dal backend) ---
+  function formattaData(d){ var p=String(d||'').split('-'); return p.length===3 ? p[2]+'/'+p[1] : d; }
+  function apriMie(){
+    schermataPrec = document.getElementById('home').classList.contains('hide') ? 'attivo' : 'home';
+    var box=document.getElementById('mieList');
+    box.innerHTML='<div class="demo">Un attimo, carico…</div>';
+    show('mie');
+    chiama('POST','/mie',{pin:pinCorrente}).then(function(res){
+      if(!res.ok){ box.innerHTML='<div class="demo">'+(res.error||'Errore')+'</div>'; return; }
+      if(!res.giorni.length){ box.innerHTML='<div class="demo">Nessuna timbratura negli ultimi 7 giorni.</div>'; return; }
+      box.innerHTML = res.giorni.map(function(g){
+        var badge = g.stato==='in corso'
+          ? '<span class="b-st st-corso">in corso</span>'
+          : (g.approvata ? '<span class="b-st st-app">✓✓ approvata</span>' : '<span class="b-st st-reg">✓ registrata</span>');
+        var ore = (g.stato==='chiuso' && g.oreNette!=null)
+          ? String(g.oreNette).replace('.',',')+' ore'
+          : (g.entrata ? 'dalle '+g.entrata : '');
+        return '<div class="mia-riga"><div><b>'+formattaData(g.data)+'</b> · '+(g.commessaCodice||'')+
+               '<div class="quando">'+ore+'</div></div>'+badge+'</div>';
+      }).join('');
+    }).catch(function(){ box.innerHTML='<div class="demo">Non riesco a collegarmi. Riprova.</div>'; });
+  }
+  function chiudiMie(){ show(schermataPrec); }
 </script>
 </body>
 </html>
