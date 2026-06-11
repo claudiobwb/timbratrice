@@ -201,9 +201,17 @@
   function carica(pin, fine){
     chiama('POST','/registro',{pin:pin, dal:document.getElementById('dal').value, al:document.getElementById('al').value})
       .then(function(res){
-        if(!res.ok){ alert(res.error||'PIN non valido'); fine&&fine(false); return; }
+        if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'PIN non valido'); fine&&fine(false); return; }
         db = res; renderTutto(); fine&&fine(true);
       }).catch(function(){ erroreRete(); fine&&fine(false); });
+  }
+
+  // il PIN in sessione non è più quello dell'utenza ufficio (cambiato da qui o da un altro PC)
+  function pinScaduto(err){
+    if(err!=='PIN ufficio non valido' || !pinU) return false;
+    alert('Il PIN ufficio è stato cambiato: entra di nuovo con il PIN nuovo.');
+    esci();
+    return true;
   }
   function aggiorna(){ carica(pinU); }
 
@@ -247,7 +255,7 @@
     chk.disabled=true;
     chiama('POST','/approva',{pin:pinU, id:id, approvata:chk.checked}).then(function(res){
       chk.disabled=false;
-      if(!res.ok){ alert(res.error||'Errore'); chk.checked=!chk.checked; return; }
+      if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'Errore'); chk.checked=!chk.checked; return; }
       var t=(db.timbrature||[]).find(function(x){return x.id===id;}); if(t) t.approvata=res.approvata;
     }).catch(function(){ chk.disabled=false; chk.checked=!chk.checked; erroreRete(); });
   }
@@ -305,7 +313,13 @@
       attivo:document.getElementById('a_attivo').checked,
       ruolo:ruolo };
     chiama('POST','/salvaArtigiano',{pin:pinU, artigiano:art}).then(function(res){
-      if(!res.ok){ alert(res.error||'Errore nel salvataggio'); return; }
+      if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'Errore nel salvataggio'); return; }
+      // se ho cambiato il PIN della MIA utenza, la sessione segue il PIN nuovo
+      var me=(db.artigiani||[]).find(function(x){ return x.pin===pinU; });
+      var nuovoPin=String(art.pin||'').trim();
+      if(me && art.id===me.id && nuovoPin && nuovoPin!==pinU){
+        pinU=nuovoPin; sessionStorage.setItem('pinUfficio', pinU);
+      }
       pulisciArt(); aggiorna();
     }).catch(erroreRete);
   }
@@ -342,7 +356,7 @@
       cliente:document.getElementById('c_cliente').value,
       attivo:document.getElementById('c_attivo').checked };
     chiama('POST','/salvaCommessa',{pin:pinU, commessa:com}).then(function(res){
-      if(!res.ok){ alert(res.error||'Errore nel salvataggio'); return; }
+      if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'Errore nel salvataggio'); return; }
       pulisciCom(); aggiorna();
     }).catch(erroreRete);
   }
