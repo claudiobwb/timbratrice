@@ -52,6 +52,7 @@
   .approva-chk{width:20px; height:20px; accent-color:var(--em); cursor:pointer;}
   .demo{font-size:11px;color:#71717a;text-align:center;padding:12px;font-family:monospace;}
   a{color:var(--em2);}
+  td.cod{font-family:monospace;color:var(--muted);}
   @media (max-width:700px){ .colmob{display:none;} }
 </style>
 </head>
@@ -102,7 +103,7 @@
         <div class="card" style="overflow-x:auto;">
           <table>
             <thead><tr>
-              <th>Data</th><th>Artigiano</th><th>Commessa</th>
+              <th>Data</th><th>Codice</th><th>Artigiano</th><th>Commessa</th>
               <th>Entrata</th><th class="colmob">Pausa</th><th class="colmob">Rientro</th><th>Uscita</th>
               <th>Ore</th><th class="colmob">Foto</th><th>Stato</th><th>OK</th>
             </tr></thead>
@@ -185,6 +186,8 @@
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function fmtData(d){ var p=String(d||'').split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0].slice(2) : d; }
   function oreTxt(n){ return (n==null?'':String(n).replace('.',',')); }
+  // codice personale = PIN dell'artigiano (mostrato così com'è)
+  function pinDi(artigianoId){ var a=(db.artigiani||[]).find(function(x){ return x.id===artigianoId; }); return a?String(a.pin||''):''; }
 
   // date di default: ultimi 7 giorni
   (function(){
@@ -238,9 +241,10 @@
     var tt=db.timbrature||[];
     // totali per artigiano (solo giornate chiuse)
     var tot={};
-    tt.forEach(function(t){ if(t.stato==='chiuso'){ tot[t.artigianoNome]=(tot[t.artigianoNome]||0)+(t.oreNette||0); } });
-    var chips=Object.keys(tot).sort().map(function(n){
-      return '<div class="chip">'+esc(n)+' · <b>'+oreTxt(Math.round(tot[n]*100)/100)+' ore</b></div>';
+    tt.forEach(function(t){ if(t.stato==='chiuso'){ var k=t.artigianoId||t.artigianoNome; if(!tot[k]) tot[k]={nome:t.artigianoNome, id:t.artigianoId, ore:0}; tot[k].ore+=(t.oreNette||0); } });
+    var chips=Object.keys(tot).map(function(k){ return tot[k]; }).sort(function(a,b){ return String(a.nome).localeCompare(String(b.nome)); }).map(function(o){
+      var p=pinDi(o.id), m=p?'<span style="color:var(--muted);font-family:monospace">'+esc(p)+'</span> · ':'';
+      return '<div class="chip">'+m+esc(o.nome)+' · <b>'+oreTxt(Math.round(o.ore*100)/100)+' ore</b></div>';
     });
     document.getElementById('totali').innerHTML = chips.length?chips.join(''):'<div class="demo" style="padding:0">Nessuna giornata chiusa nel periodo.</div>';
 
@@ -254,7 +258,7 @@
         : '<span class="b-st st-reg">chiusa</span>';
       var foto = t.foto ? '<a href="'+esc(t.foto)+'" target="_blank" rel="noopener">📷</a>' : '';
       return '<tr>'+
-        '<td>'+fmtData(t.data)+'</td><td><b>'+esc(t.artigianoNome)+'</b></td><td>'+esc(t.commessaCodice)+'</td>'+
+        '<td>'+fmtData(t.data)+'</td><td class="cod">'+esc(pinDi(t.artigianoId))+'</td><td><b>'+esc(t.artigianoNome)+'</b></td><td>'+esc(t.commessaCodice)+'</td>'+
         '<td>'+esc(t.entrata||'')+'</td><td class="colmob">'+esc(t.pausa||'')+'</td><td class="colmob">'+esc(t.rientro||'')+'</td><td>'+esc(t.uscita||'')+'</td>'+
         '<td><b>'+oreTxt(t.stato==='chiuso'?t.oreNette:'')+'</b></td><td class="colmob">'+foto+'</td><td>'+st+'</td>'+
         '<td><input type="checkbox" class="approva-chk" '+(t.approvata?'checked':'')+' onchange="approva(\''+t.id+'\', this)"></td>'+
@@ -282,13 +286,15 @@
     var visti={};
     var righe=(db.artigiani||[]).filter(function(a){ return a.attivo && a.ruolo!=='ufficio'; }).map(function(a){
       visti[a.id]=true;
-      return riepilogoArtigiano(a.nome, tt.filter(function(t){ return t.artigianoId===a.id; }), giorno, oggiS);
+      var r=riepilogoArtigiano(a.nome, tt.filter(function(t){ return t.artigianoId===a.id; }), giorno, oggiS);
+      r.cod = a.pin?String(a.pin):''; return r;
     });
     // timbrature di persone fuori elenco attivi (es. disattivate dopo): non vanno perse
     var orfani={};
     tt.forEach(function(t){ if(!visti[t.artigianoId]) orfani[t.artigianoId]=t.artigianoNome; });
     Object.keys(orfani).forEach(function(id){
-      righe.push(riepilogoArtigiano(orfani[id]+' (non in elenco)', tt.filter(function(t){ return t.artigianoId===id; }), giorno, oggiS));
+      var r=riepilogoArtigiano(orfani[id]+' (non in elenco)', tt.filter(function(t){ return t.artigianoId===id; }), giorno, oggiS);
+      r.cod = pinDi(id); righe.push(r);
     });
     var totOre=righe.reduce(function(s,r){ return s+r.ore; },0);
     var quanti=righe.filter(function(r){ return r.cls!=='no'; }).length;
@@ -302,8 +308,8 @@
       '.firma{margin-top:40px;color:#666;font-size:12px}';
     var html='<h1>Report giornata — '+fmtData(giorno)+'</h1>'+
       '<div class="sotto">Timbratrice Gesta · Beta 2 · generato il '+fmtData(oggiS)+'</div>'+
-      '<table><tr><th>Artigiano</th><th>Esito</th><th>Dettaglio (commessa · orari)</th></tr>'+
-      righe.map(function(r){ return '<tr><td>'+esc(r.nome)+'</td><td class="'+r.cls+'">'+r.esito+'</td><td>'+esc(r.det)+'</td></tr>'; }).join('')+
+      '<table><tr><th>Codice</th><th>Artigiano</th><th>Esito</th><th>Dettaglio (commessa · orari)</th></tr>'+
+      righe.map(function(r){ return '<tr><td>'+esc(r.cod||'')+'</td><td>'+esc(r.nome)+'</td><td class="'+r.cls+'">'+r.esito+'</td><td>'+esc(r.det)+'</td></tr>'; }).join('')+
       '</table>'+
       '<div class="tot">Totale: '+oreTxt(Math.round(totOre*100)/100)+' ore · '+quanti+' artigiani al lavoro</div>'+
       '<div class="firma">Verifiche: ⚠ manca FINE = giornata mai chiusa (da sistemare) · "non ha timbrato" = nessuna entrata quel giorno.</div>';
@@ -328,9 +334,9 @@
   }
 
   function scaricaCsv(){
-    var righe=[['Data','Artigiano','Commessa','Entrata','Pausa','Rientro','Uscita','Ore nette','Stato','Approvata']];
+    var righe=[['Data','Codice','Artigiano','Commessa','Entrata','Pausa','Rientro','Uscita','Ore nette','Stato','Approvata']];
     (db.timbrature||[]).forEach(function(t){
-      righe.push([t.data, t.artigianoNome, t.commessaCodice, t.entrata||'', t.pausa||'', t.rientro||'', t.uscita||'', oreTxt(t.stato==='chiuso'?t.oreNette:''), t.stato, t.approvata?'SI':'NO']);
+      righe.push([t.data, pinDi(t.artigianoId), t.artigianoNome, t.commessaCodice, t.entrata||'', t.pausa||'', t.rientro||'', t.uscita||'', oreTxt(t.stato==='chiuso'?t.oreNette:''), t.stato, t.approvata?'SI':'NO']);
     });
     var csv='﻿'+righe.map(function(r){ return r.map(function(v){ return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'; }).join(';'); }).join('\r\n');
     var a=document.createElement('a');
