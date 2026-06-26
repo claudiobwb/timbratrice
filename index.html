@@ -107,8 +107,34 @@
         <button class="big b-amber" id="btnPausa" onclick="timbra('PAUSA')">⏸ Pausa</button>
         <button class="big b-blue" id="btnRientro" onclick="timbra('RIENTRO')">↩ Rientro</button>
       </div>
-      <button class="big b-rose" id="btnFine" onclick="timbra('FINE')">⏹ Fine giornata</button>
+      <button class="big b-rose" id="btnFine" onclick="apriFine()">⏹ Fine giornata</button>
       <button class="big b-ghost" id="btnMie2" onclick="apriMie()">📋 Le mie ore</button>
+    </section>
+
+    <!-- FINE GIORNATA -->
+    <section id="fine" class="hide">
+      <div class="card">
+        <span class="pill" id="finePill">Fine giornata</span>
+        <div class="who" id="fineOre">0 h</div>
+        <div class="sub" id="fineRiep" style="margin-top:6px"></div>
+      </div>
+      <div class="card hide" id="finePausaBox">
+        <div class="label" id="finePausaLbl">Hai fatto la pausa pranzo?</div>
+        <div class="row">
+          <button class="big b-ghost" id="finePausaSi" onclick="setPausa('standard')">🍽 Sì (−1h)</button>
+          <button class="big b-ghost" id="finePausaNo" onclick="setPausa('continuato')">⏱ Orario continuato</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label" id="fineCantLbl">Cantieri di oggi</div>
+        <div class="row">
+          <button class="big b-ghost" id="fineCantUno" onclick="setCantieri(false)">Solo questo</button>
+          <button class="big b-ghost" id="fineCantPiu" onclick="setCantieri(true)">Più cantieri</button>
+        </div>
+        <div id="ripBox" class="hide" style="margin-top:14px"></div>
+      </div>
+      <button class="big b-rose" id="btnConfermaFine" onclick="confermaFine()">⏹ Conferma fine</button>
+      <button class="big b-ghost" id="btnAnnullaFine" onclick="show('attivo')">← Annulla</button>
     </section>
 
     <!-- LE MIE ORE -->
@@ -157,6 +183,8 @@
       carico:'Un attimo, carico…', nessuna:'Nessuna timbratura negli ultimi 7 giorni.',
       inCorso:'in corso', registrata:'✓ registrata', approvata:'✓✓ approvata', dalle:'dalle', ore:'ore',
       titoloMie:'Le mie ore — ultimi 7 giorni',
+      fineTitolo:'Fine giornata', finePausaQ:'Hai fatto la pausa pranzo?', finePausaSi:'🍽 Sì (−1h)', fineContinuato:'⏱ Orario continuato',
+      fineCantieriQ:'Cantieri di oggi', fineSolo:'Solo questo', finePiu:'Più cantieri', fineAggiungi:'+ Aggiungi cantiere', fineResto:'resto', fineTot:'Totale', fineConferma:'⏹ Conferma fine', fineAnnulla:'← Annulla', fineNonQuadra:'Le ore non quadrano', fineInPausa:'Sei in pausa: timbra prima il Rientro.',
       errRete:'Non riesco a collegarmi. Controlla la connessione e riprova.' },
     ES:{ salutoM:'¡Buenos días!', salutoP:'¡Buenas tardes!', salutoS:'¡Buenas noches!',
       benvenuto:'¡Bienvenido! Elige el stand y haz la foto para empezar.',
@@ -173,6 +201,8 @@
       carico:'Un momento…', nessuna:'Sin fichajes en los últimos 7 días.',
       inCorso:'en curso', registrata:'✓ registrada', approvata:'✓✓ aprobada', dalle:'desde las', ore:'horas',
       titoloMie:'Mis horas — últimos 7 días',
+      fineTitolo:'Fin del día', finePausaQ:'¿Hiciste la pausa del almuerzo?', finePausaSi:'🍽 Sí (−1h)', fineContinuato:'⏱ Jornada continua',
+      fineCantieriQ:'Obras de hoy', fineSolo:'Solo esta', finePiu:'Varias obras', fineAggiungi:'+ Añadir obra', fineResto:'resto', fineTot:'Total', fineConferma:'⏹ Confirmar fin', fineAnnulla:'← Cancelar', fineNonQuadra:'Las horas no cuadran', fineInPausa:'Estás en pausa: marca primero la Vuelta.',
       errRete:'No puedo conectarme. Comprueba la conexión y vuelve a intentarlo.' },
     RO:{ salutoM:'Bună dimineața!', salutoP:'Bună ziua!', salutoS:'Bună seara!',
       benvenuto:'Bine ai venit! Alege standul și fă poza ca să începi.',
@@ -189,6 +219,8 @@
       carico:'O clipă…', nessuna:'Nicio pontare în ultimele 7 zile.',
       inCorso:'în curs', registrata:'✓ înregistrată', approvata:'✓✓ aprobată', dalle:'de la', ore:'ore',
       titoloMie:'Orele mele — ultimele 7 zile',
+      fineTitolo:'Sfârșit de zi', finePausaQ:'Ai făcut pauza de prânz?', finePausaSi:'🍽 Da (−1h)', fineContinuato:'⏱ Program continuu',
+      fineCantieriQ:'Șantiere de azi', fineSolo:'Doar acesta', finePiu:'Mai multe', fineAggiungi:'+ Adaugă șantier', fineResto:'rest', fineTot:'Total', fineConferma:'⏹ Confirmă', fineAnnulla:'← Anulează', fineNonQuadra:'Orele nu corespund', fineInPausa:'Ești în pauză: pontează mai întâi Revenirea.',
       errRete:'Nu mă pot conecta. Verifică conexiunea și încearcă din nou.' }
   };
   var L=T.IT;
@@ -216,10 +248,19 @@
     document.getElementById('btnTorna').textContent=L.torna;
     document.getElementById('btnContinua').textContent=L.continua;
     document.getElementById('benvenuto').textContent=L.benvenuto;
+    document.getElementById('finePill').textContent=L.fineTitolo;
+    document.getElementById('finePausaLbl').textContent=L.finePausaQ;
+    document.getElementById('finePausaSi').textContent=L.finePausaSi;
+    document.getElementById('finePausaNo').textContent=L.fineContinuato;
+    document.getElementById('fineCantLbl').textContent=L.fineCantieriQ;
+    document.getElementById('fineCantUno').textContent=L.fineSolo;
+    document.getElementById('fineCantPiu').textContent=L.finePiu;
+    document.getElementById('btnConfermaFine').textContent=L.fineConferma;
+    document.getElementById('btnAnnullaFine').textContent=L.fineAnnulla;
   }
   function numOre(o){ return String(o).replace('.',','); }
 
-  function show(id){ ['login','home','attivo','ok','mie'].forEach(function(s){ document.getElementById(s).classList.toggle('hide', s!==id); }); window.scrollTo(0,0); }
+  function show(id){ ['login','home','attivo','fine','ok','mie'].forEach(function(s){ document.getElementById(s).classList.toggle('hide', s!==id); }); window.scrollTo(0,0); }
 
   function chiama(metodo, path, body){
     var opt={ method:metodo };
@@ -264,6 +305,8 @@
   function caricaCommesse(){
     chiama('GET','/commesse').then(function(res){
       if(!res.ok) return;
+      commesseList=res.commesse||[];
+      if(fineMulti) renderRip();
       var sel=document.getElementById('commessa');
       while(sel.options.length>1) sel.remove(1);
       res.commesse.forEach(function(c){
@@ -321,6 +364,98 @@
         apOggi=null;
         setTimeout(function(){ document.getElementById('pin').value=''; me=null; pinCorrente=''; },50);
       }
+    }).catch(erroreRete).finally(function(){ occupato=false; });
+  }
+
+  // ===== FINE GIORNATA: scelta pausa (orario continuato) + ripartizione cantieri =====
+  var commesseList=[], finePausa='standard', fineMulti=false, fineUscita='', fineTotale=0, ripExtra=[];
+  function escA(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function oraOraArt(){ var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+  // stessa formula del backend: (uscita-entrata) - (rientro-pausa)
+  function oreSpan(e,p,r,u){
+    var m=function(h){ if(!h) return null; var x=String(h).split(':'); return (+x[0])*60+(+x[1]); };
+    var E=m(e),U=m(u),P=m(p),R=m(r); if(E==null||U==null) return 0;
+    var min=U-E; if(P!=null&&R!=null&&R>P) min-=(R-P);
+    return Math.round((min/60)*100)/100;
+  }
+  function totaleFine(){
+    var span=oreSpan(apOggi&&apOggi.entrata, apOggi&&apOggi.pausa, apOggi&&apOggi.rientro, fineUscita);
+    var pausaReale = apOggi && apOggi.pausa && apOggi.rientro;
+    if(!pausaReale && finePausa!=='continuato') span=Math.round(Math.max(0,span-1)*100)/100;
+    return span;
+  }
+  function setBtn(id,on){ var b=document.getElementById(id); if(b){ b.classList.toggle('b-em',on); b.classList.toggle('b-ghost',!on); } }
+  function aggiornaBottoniFine(){
+    setBtn('finePausaSi', finePausa==='standard'); setBtn('finePausaNo', finePausa==='continuato');
+    setBtn('fineCantUno', !fineMulti); setBtn('fineCantPiu', fineMulti);
+  }
+  function apriFine(){
+    if(occupato) return;
+    if(apOggi && apOggi.pausa && !apOggi.rientro){ alert(L.fineInPausa); return; }
+    fineUscita=oraOraArt(); finePausa='standard'; fineMulti=false; ripExtra=[];
+    var pausaReale = apOggi && apOggi.pausa && apOggi.rientro;
+    document.getElementById('finePausaBox').classList.toggle('hide', !!pausaReale);
+    var pezzi=[]; if(apOggi){ if(apOggi.entrata)pezzi.push(L.eEntrata+' '+apOggi.entrata); if(apOggi.pausa)pezzi.push(L.ePausa+' '+apOggi.pausa); if(apOggi.rientro)pezzi.push(L.eRientro+' '+apOggi.rientro); }
+    pezzi.push(L.uscita(fineUscita));
+    document.getElementById('fineRiep').textContent=pezzi.join(' · ');
+    document.getElementById('ripBox').classList.add('hide');
+    aggiornaBottoniFine(); ricalcolaFine();
+    if(!commesseList.length) caricaCommesse();
+    show('fine');
+  }
+  function setPausa(s){ finePausa=s; aggiornaBottoniFine(); ricalcolaFine(); }
+  function setCantieri(multi){
+    fineMulti=multi;
+    if(multi && !ripExtra.length) ripExtra=[{codice:'',ore:''}];
+    document.getElementById('ripBox').classList.toggle('hide', !multi);
+    aggiornaBottoniFine(); if(multi) renderRip();
+  }
+  function aggiungiRip(){ ripExtra.push({codice:'',ore:''}); renderRip(); }
+  function rimuoviRip(i){ ripExtra.splice(i,1); if(!ripExtra.length){ fineMulti=false; document.getElementById('ripBox').classList.add('hide'); aggiornaBottoniFine(); } renderRip(); }
+  function setRipCod(i,v){ ripExtra[i].codice=v; aggiornaSommario(); }
+  function setRipOre(i,v){ ripExtra[i].ore=v; aggiornaSommario(); }
+  function sommaExtra(){ return ripExtra.reduce(function(s,r){ return s+(parseFloat(r.ore)||0); },0); }
+  function ricalcolaFine(){ fineTotale=totaleFine(); document.getElementById('fineOre').textContent=numOre(fineTotale)+' h'; if(fineMulti) aggiornaSommario(); }
+  function renderRip(){
+    var box=document.getElementById('ripBox'); if(!fineMulti){ box.innerHTML=''; return; }
+    var opts='<option value="">—</option>'+commesseList.map(function(c){ return '<option value="'+escA(c.codice)+'">'+escA(c.codice+' · '+(c.descrizione||''))+'</option>'; }).join('');
+    var html='<div class="mia-riga"><div><b>'+escA(comm)+'</b> ('+L.fineResto+')</div><div class="quando" id="ripResto">0 h</div></div>';
+    ripExtra.forEach(function(r,i){
+      html+='<div class="row" style="margin-top:8px;align-items:center">'+
+        '<select id="ripSel'+i+'" onchange="setRipCod('+i+',this.value)" style="flex:2;font-size:15px;padding:10px">'+opts+'</select>'+
+        '<input type="number" min="0" step="0.5" value="'+escA(r.ore)+'" oninput="setRipOre('+i+',this.value)" style="flex:1;font-size:15px;padding:10px" placeholder="h">'+
+        '<button class="b-ghost" onclick="rimuoviRip('+i+')" style="padding:10px 14px;border-radius:12px">✕</button></div>';
+    });
+    html+='<button class="big b-ghost" style="margin-top:10px;font-size:15px;padding:12px" onclick="aggiungiRip()">'+L.fineAggiungi+'</button>';
+    html+='<div class="sub" id="ripTot" style="margin-top:10px"></div>';
+    box.innerHTML=html;
+    ripExtra.forEach(function(r,i){ var s=document.getElementById('ripSel'+i); if(s) s.value=r.codice||''; });
+    aggiornaSommario();
+  }
+  function aggiornaSommario(){
+    var resto=Math.round((fineTotale - sommaExtra())*100)/100;
+    var er=document.getElementById('ripResto'); if(er) er.textContent=numOre(Math.max(0,resto))+' h';
+    var ok = resto>=0 && ripExtra.length>0 && ripExtra.every(function(r){ return r.codice && (parseFloat(r.ore)||0)>0; });
+    var et=document.getElementById('ripTot');
+    if(et){ et.style.color=ok?'var(--em2)':'var(--rose)'; et.textContent=L.fineTot+': '+numOre(Math.round((sommaExtra()+Math.max(0,resto))*100)/100)+' / '+numOre(fineTotale)+' h '+(ok?'✓':'⚠'); }
+  }
+  function confermaFine(){
+    if(occupato) return;
+    var body={tipo:'FINE', artigianoId:me.id, artigianoNome:me.nome, pausaPranzo:finePausa};
+    if(fineMulti){
+      var resto=Math.round((fineTotale - sommaExtra())*100)/100;
+      if(resto<0 || !ripExtra.every(function(r){ return r.codice && (parseFloat(r.ore)||0)>0; })){ alert(L.fineNonQuadra); return; }
+      body.ripartizione=[{codice:comm, ore:Math.max(0,resto)}].concat(ripExtra.map(function(r){ return {codice:r.codice, ore:parseFloat(r.ore)||0}; }));
+    }
+    occupato=true;
+    chiama('POST','/timbra',body).then(function(res){
+      if(!res.ok){ alert(res.error||'Non sono riuscito a registrare. Riprova.'); return; }
+      var sub=L.uscita(res.ora||fineUscita);
+      if(res.oreNette!=null) sub+=' · '+L.oreLav(numOre(res.oreNette));
+      sub+=' — '+L.grazie((me.nome||'').split(' ')[0]);
+      okScreen(L.okFine, sub, 'login');
+      apOggi=null;
+      setTimeout(function(){ document.getElementById('pin').value=''; me=null; pinCorrente=''; },50);
     }).catch(erroreRete).finally(function(){ occupato=false; });
   }
 
