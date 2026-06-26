@@ -53,6 +53,9 @@
   .demo{font-size:11px;color:#71717a;text-align:center;padding:12px;font-family:monospace;}
   a{color:var(--em2);}
   td.cod{font-family:monospace;color:var(--muted);}
+  th.sortable{cursor:pointer;user-select:none;}
+  th.sortable:hover{color:var(--txt);}
+  th.sortable span{color:var(--em2);}
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;}
   .modal-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:520px;width:100%;}
   @media (max-width:700px){ .colmob{display:none;} }
@@ -135,8 +138,25 @@
           <div class="demo" style="text-align:left;padding:8px 0 0;">Il PIN è la chiave personale: deve essere DIVERSO per ogni persona (il salvataggio lo controlla).<br>Importa Excel: legge le colonne <b>Nome, Cognome, Telefono, Lingua</b> (es. ELENCO ARTIGIANI.xlsx); ai nuovi assegna un PIN automatico.</div>
         </div>
         <div class="card" style="overflow-x:auto;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+            <input id="artCerca" placeholder="🔎 cerca nome / PIN / telefono" style="flex:1;min-width:180px" oninput="renderArtigiani()">
+            <span id="artBulk" style="display:none;gap:8px;align-items:center;">
+              <span id="artSelN" style="font-size:12px;color:var(--muted)"></span>
+              <button class="b-ghost b-mini" onclick="bulkArt('attiva')">✓ Attiva</button>
+              <button class="b-ghost b-mini" onclick="bulkArt('disattiva')">✕ Disattiva</button>
+              <button class="b-ghost b-mini" style="color:#fb7185;border-color:rgba(244,63,94,.4)" onclick="bulkArt('elimina')">🗑 Elimina</button>
+            </span>
+          </div>
           <table>
-            <thead><tr><th>Nome</th><th class="colmob">Telefono</th><th>Lingua</th><th>PIN</th><th>Ruolo</th><th>Stato</th></tr></thead>
+            <thead><tr>
+              <th style="width:28px"><input type="checkbox" id="artAll" onclick="toggleAllArt(this)" title="Seleziona tutti"></th>
+              <th class="sortable" onclick="ordinaArt('pin')">PIN<span id="srt-pin"></span></th>
+              <th class="sortable" onclick="ordinaArt('nome')">Nome<span id="srt-nome"></span></th>
+              <th class="colmob sortable" onclick="ordinaArt('telefono')">Telefono<span id="srt-telefono"></span></th>
+              <th class="sortable" onclick="ordinaArt('lingua')">Lingua<span id="srt-lingua"></span></th>
+              <th class="sortable" onclick="ordinaArt('ruolo')">Ruolo<span id="srt-ruolo"></span></th>
+              <th class="sortable" onclick="ordinaArt('attivo')">Stato<span id="srt-attivo"></span></th>
+            </tr></thead>
             <tbody id="artBody"></tbody>
           </table>
         </div>
@@ -413,16 +433,61 @@
   }
 
   // ---- ARTIGIANI ----
+  var artSel={}, artSort={col:'nome',dir:1};
+  function artigianiVisibili(){
+    var box=document.getElementById('artCerca');
+    var cerca=(box?box.value:'').trim().toLowerCase();
+    var lista=(db.artigiani||[]).filter(function(a){ return !cerca || (String(a.nome||'')+' '+String(a.pin||'')+' '+String(a.telefono||'')).toLowerCase().indexOf(cerca)>=0; });
+    var c=artSort.col, d=artSort.dir;
+    lista.sort(function(a,b){
+      var va,vb;
+      if(c==='attivo'){ va=a.attivo?1:0; vb=b.attivo?1:0; }
+      else if(c==='pin'){ va=String(a.pin||''); vb=String(b.pin||''); }
+      else { va=String(a[c]==null?'':a[c]).toLowerCase(); vb=String(b[c]==null?'':b[c]).toLowerCase(); }
+      return (va<vb?-1:va>vb?1:0)*d;
+    });
+    return lista;
+  }
+  function ordinaArt(col){ if(artSort.col===col) artSort.dir*=-1; else { artSort.col=col; artSort.dir=1; } renderArtigiani(); }
+  function selArt(id,chk){ if(chk.checked) artSel[id]=true; else delete artSel[id]; aggiornaBulkBar(); }
+  function toggleAllArt(chk){ artSel={}; if(chk.checked) artigianiVisibili().forEach(function(a){ artSel[a.id]=true; }); renderArtigiani(); }
+  function aggiornaBulkBar(){
+    var n=Object.keys(artSel).length, bulk=document.getElementById('artBulk');
+    if(bulk){ bulk.style.display=n?'inline-flex':'none'; document.getElementById('artSelN').textContent=n+' selezionati'; }
+  }
   function renderArtigiani(){
-    var body=document.getElementById('artBody');
-    body.innerHTML=(db.artigiani||[]).map(function(a,i){
+    var lista=artigianiVisibili();
+    ['pin','nome','telefono','lingua','ruolo','attivo'].forEach(function(k){ var e=document.getElementById('srt-'+k); if(e) e.textContent=(artSort.col===k?(artSort.dir>0?' ▲':' ▼'):''); });
+    document.getElementById('artBody').innerHTML=lista.map(function(a){
       var st=a.attivo?'<span class="b-st st-app">attivo</span>':'<span class="b-st st-off">disattivo</span>';
       var ru=a.ruolo==='ufficio'?'<span class="b-st st-corso">ufficio</span>':esc(a.ruolo||'');
-      return '<tr class="cliccabile" onclick="editArt('+i+')"><td><b>'+esc(a.nome)+'</b></td><td class="colmob">'+esc(a.telefono||'')+'</td><td>'+esc(a.lingua||'')+'</td><td>'+esc(a.pin)+'</td><td>'+ru+'</td><td>'+st+'</td></tr>';
+      return '<tr class="cliccabile" onclick="editArtById(\''+a.id+'\')">'+
+        '<td><input type="checkbox" class="art-chk" '+(artSel[a.id]?'checked':'')+' onclick="event.stopPropagation();selArt(\''+a.id+'\',this)"></td>'+
+        '<td class="cod">'+esc(a.pin)+'</td><td><b>'+esc(a.nome)+'</b></td>'+
+        '<td class="colmob">'+esc(a.telefono||'')+'</td><td>'+esc(a.lingua||'')+'</td><td>'+ru+'</td><td>'+st+'</td></tr>';
     }).join('');
+    aggiornaBulkBar();
+    var all=document.getElementById('artAll'); if(all) all.checked=(lista.length>0 && lista.every(function(a){ return artSel[a.id]; }));
   }
-  function editArt(i){
-    var a=db.artigiani[i];
+  function bulkArt(azione){
+    var sel=(db.artigiani||[]).filter(function(a){ return artSel[a.id]; });
+    if(!sel.length){ alert('Seleziona almeno un artigiano.'); return; }
+    var uff=sel.filter(function(a){ return a.ruolo==='ufficio'; });
+    if(azione==='elimina'){
+      if(uff.length){ alert('Non puoi eliminare l\'utenza Ufficio ('+uff.map(function(a){return a.nome;}).join(', ')+'): deselezionala.'); return; }
+      if(!confirm('Eliminare DEFINITIVAMENTE '+sel.length+' artigiano/i?\n\n'+sel.map(function(a){return '· '+a.nome+' (PIN '+a.pin+')';}).join('\n')+'\n\nLe timbrature storiche restano. Operazione IRREVERSIBILE.')) return;
+      var listaE=sel.map(function(a){ a._eti=a.nome+' ('+a.pin+')'; return a; });
+      salvaInSerie(listaE, function(a){ return chiama('POST','/eliminaArtigiano',{pin:pinU, id:a.id}); }, function(okN,err){ artSel={}; var m='Eliminati: '+okN+'/'+listaE.length; if(err.length)m+='\n\nProblemi:\n'+err.join('\n'); alert(m); aggiorna(); });
+      return;
+    }
+    var attivo=(azione==='attiva');
+    if(uff.length && !attivo) alert('Nota: stai disattivando anche l\'utenza Ufficio — con quel PIN non potresti più entrare.');
+    if(!confirm((attivo?'Attivare':'Disattivare')+' '+sel.length+' artigiano/i?')) return;
+    var lista2=sel.map(function(a){ a._eti=a.nome+' ('+a.pin+')'; return a; });
+    salvaInSerie(lista2, function(a){ return chiama('POST','/salvaArtigiano',{pin:pinU, artigiano:{id:a.id,nome:a.nome,telefono:a.telefono,lingua:a.lingua,pin:a.pin,attivo:attivo,ruolo:a.ruolo}}); }, function(okN,err){ artSel={}; var m='Aggiornati: '+okN+'/'+lista2.length; if(err.length)m+='\n\nProblemi:\n'+err.join('\n'); alert(m); aggiorna(); });
+  }
+  function editArtById(id){
+    var a=(db.artigiani||[]).find(function(x){ return x.id===id; }); if(!a) return;
     document.getElementById('a_id').value=a.id;
     document.getElementById('a_nome').value=a.nome||'';
     document.getElementById('a_tel').value=a.telefono||'';
