@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timbratrice Gesta — Ufficio</title>
+<style>
+  :root{ --bg:#09090b; --card:#18181b; --line:#27272a; --txt:#e4e4e7; --muted:#a1a1aa; --em:#10b981; --em2:#34d399; --amber:#f59e0b; --rose:#f43f5e; }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--txt); font-family:-apple-system,Segoe UI,Roboto,sans-serif; min-height:100vh;}
+  .wrap{max-width:1080px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column;}
+  header{padding:16px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; position:sticky; top:0; background:var(--bg); z-index:5;}
+  .logo{width:40px;height:40px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;color:#09090b;font-size:13px;}
+  h1{font-size:15px; margin:0; font-weight:900; letter-spacing:.5px; text-transform:uppercase;}
+  .sub{font-size:10px;color:var(--muted);font-family:monospace;}
+  .badge{margin-left:auto; font-size:9px; font-weight:800; background:rgba(16,185,129,.15); color:var(--em2); border:1px solid rgba(16,185,129,.3); padding:3px 7px; border-radius:6px; text-transform:uppercase;}
+  main{flex:1; padding:20px 16px; display:flex; flex-direction:column; gap:16px;}
+  .label{font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-family:monospace; margin-bottom:8px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px;}
+  input,select{padding:10px 12px; background:#09090b; border:1px solid var(--line); border-radius:10px; color:#fff; font-size:14px; outline:none;}
+  input:focus,select:focus{border-color:var(--em);}
+  .pin{text-align:center; letter-spacing:10px; font-size:24px; width:100%;}
+  button{cursor:pointer; border:none; border-radius:10px; font-weight:800; font-size:13px; padding:10px 16px;}
+  .b-em{background:var(--em); color:#09090b;}
+  .b-ghost{background:#09090b; color:var(--txt); border:1px solid var(--line);}
+  .b-mini{font-size:11px; padding:6px 10px;}
+  .big{width:100%; padding:16px; font-size:17px; text-transform:uppercase; letter-spacing:1px; border-radius:14px;}
+  .hide{display:none!important;}
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .tabs{display:flex; gap:6px; margin-right:auto;}
+  .tab{background:#09090b; border:1px solid var(--line); color:var(--muted); border-radius:10px; padding:10px 16px; font-weight:800;}
+  .tab.on{background:var(--em); color:#09090b; border-color:var(--em);}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); font-family:monospace; text-align:left; padding:8px 8px; border-bottom:1px solid var(--line);}
+  td{padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tr.cliccabile{cursor:pointer;}
+  tr.cliccabile:hover td{background:#1f1f23;}
+  .tot{display:flex; flex-wrap:wrap; gap:10px;}
+  .tot .chip{background:#09090b; border:1px solid var(--line); border-radius:12px; padding:10px 14px; font-size:13px;}
+  .tot .chip b{color:var(--em2);}
+  .b-st{display:inline-block;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;white-space:nowrap;}
+  .st-app{background:rgba(16,185,129,.15);color:var(--em2);border:1px solid rgba(16,185,129,.35);}
+  .st-reg{background:#27272a;color:var(--txt);border:1px solid var(--line);}
+  .st-corso{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.35);}
+  .st-off{background:#27272a;color:var(--muted);border:1px solid var(--line);}
+  .st-err{background:rgba(244,63,94,.15);color:#fb7185;border:1px solid rgba(244,63,94,.35);}
+  .form-riga{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .form-riga label{font-size:11px; color:var(--muted); display:flex; flex-direction:column; gap:4px;}
+  .chk{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--txt);}
+  .chk input{width:18px; height:18px; accent-color:var(--em);}
+  .approva-chk{width:20px; height:20px; accent-color:var(--em); cursor:pointer;}
+  .demo{font-size:11px;color:#71717a;text-align:center;padding:12px;font-family:monospace;}
+  a{color:var(--em2);}
+  td.cod{font-family:monospace;color:var(--muted);}
+  th.sortable{cursor:pointer;user-select:none;}
+  th.sortable:hover{color:var(--txt);}
+  th.sortable span{color:var(--em2);}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;}
+  .modal-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:520px;width:100%;}
+  @media (max-width:700px){ .colmob{display:none;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><img src="logo.png" alt="GESTA" style="width:100%;height:100%;object-fit:contain;padding:3px"></div>
+    <div>
+      <h1>Timbratrice <span style="color:var(--em2)">Gesta</span> · Ufficio</h1>
+      <div class="sub">centro di controllo operatore</div>
+    </div>
+    <span class="badge" onclick="apriChangelog()" style="cursor:pointer" title="Novità">Beta 3</span>
+  </header>
+  <main>
+
+    <!-- LOGIN OPERATORE -->
+    <section id="login">
+      <div class="card" style="max-width:420px; margin:40px auto;">
+        <div class="label">PIN operatore</div>
+        <input id="pinU" class="pin" inputmode="numeric" maxlength="8" placeholder="••••••">
+        <div style="height:14px"></div>
+        <button id="btnEntra" class="b-em big" onclick="entraUff()">Entra</button>
+      </div>
+    </section>
+
+    <!-- APP -->
+    <section id="app" class="hide">
+      <div class="card toolbar">
+        <div class="tabs">
+          <button class="tab on" id="tab-btn-ore" onclick="vai('ore')">🕒 Ore</button>
+          <button class="tab" id="tab-btn-artigiani" onclick="vai('artigiani')">👷 Artigiani</button>
+          <button class="tab" id="tab-btn-commesse" onclick="vai('commesse')">🎪 Commesse</button>
+        </div>
+        <label style="font-size:11px;color:var(--muted)">dal <input type="date" id="dal"></label>
+        <label style="font-size:11px;color:var(--muted)">al <input type="date" id="al"></label>
+        <button class="b-ghost" onclick="aggiorna()">↻ Aggiorna</button>
+        <button class="b-ghost" onclick="scaricaCsv()">⬇ CSV</button>
+        <button class="b-ghost" onclick="reportGiorno()">📄 Report giorno</button>
+        <button class="b-ghost" onclick="esci()">Esci</button>
+      </div>
+
+      <!-- TAB ORE -->
+      <div id="tab-ore">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="label">Totale ore nel periodo (giornate chiuse)</div>
+          <div class="tot" id="totali"></div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <input id="oreCerca" placeholder="🔎 cerca artigiano / codice / commessa / data" style="width:100%;margin-bottom:12px" oninput="renderOre()">
+          <table>
+            <thead><tr>
+              <th class="sortable" onclick="ordinaOre('data')">Data<span id="srto-data"></span></th>
+              <th class="sortable" onclick="ordinaOre('codice')">Codice<span id="srto-codice"></span></th>
+              <th class="sortable" onclick="ordinaOre('artigianoNome')">Artigiano<span id="srto-artigianoNome"></span></th>
+              <th class="sortable" onclick="ordinaOre('commessaCodice')">Commessa<span id="srto-commessaCodice"></span></th>
+              <th>Entrata</th><th class="colmob">Pausa</th><th class="colmob">Rientro</th><th>Uscita</th>
+              <th class="sortable" onclick="ordinaOre('ore')">Ore<span id="srto-ore"></span></th><th class="colmob">Foto</th><th class="sortable" onclick="ordinaOre('stato')">Stato<span id="srto-stato"></span></th><th>OK</th>
+            </tr></thead>
+            <tbody id="oreBody"></tbody>
+          </table>
+          <div id="oreVuoto" class="demo hide">Nessuna timbratura nel periodo scelto.</div>
+        </div>
+      </div>
+
+      <!-- TAB ARTIGIANI -->
+      <div id="tab-artigiani" class="hide">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="label" id="artFormTitolo">Nuovo artigiano</div>
+          <div class="form-riga">
+            <input type="hidden" id="a_id">
+            <label>Nome e cognome<input id="a_nome" style="width:200px"></label>
+            <label>Telefono<input id="a_tel" style="width:140px"></label>
+            <label>Lingua<select id="a_lingua"><option>IT</option><option>ES</option><option>RO</option></select></label>
+            <label>PIN (4-8 cifre)<input id="a_pin" inputmode="numeric" maxlength="8" style="width:110px"></label>
+            <label class="chk" style="margin-top:14px"><input type="checkbox" id="a_attivo" checked> attivo</label>
+            <label class="chk" style="margin-top:14px"><input type="checkbox" id="a_ufficio"> accesso ufficio</label>
+            <button class="b-em" onclick="salvaArt()">💾 Salva</button>
+            <button class="b-ghost" onclick="pulisciArt()">Nuovo</button>
+            <button class="b-ghost" onclick="document.getElementById('impArt').click()">📥 Importa Excel</button>
+            <input type="file" id="impArt" accept=".xlsx,.xls" class="hide" onchange="importaArtigiani(this)">
+          </div>
+          <div class="demo" style="text-align:left;padding:8px 0 0;">Il PIN è la chiave personale: deve essere DIVERSO per ogni persona (il salvataggio lo controlla).<br>Importa Excel: legge le colonne <b>Nome, Cognome, Telefono, Lingua</b> (es. ELENCO ARTIGIANI.xlsx); ai nuovi assegna un PIN automatico.</div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+            <input id="artCerca" placeholder="🔎 cerca nome / PIN / telefono" style="flex:1;min-width:180px" oninput="renderArtigiani()">
+            <span id="artBulk" style="display:none;gap:8px;align-items:center;">
+              <span id="artSelN" style="font-size:12px;color:var(--muted)"></span>
+              <button class="b-ghost b-mini" onclick="bulkArt('attiva')">✓ Attiva</button>
+              <button class="b-ghost b-mini" onclick="bulkArt('disattiva')">✕ Disattiva</button>
+              <button class="b-ghost b-mini" style="color:#fb7185;border-color:rgba(244,63,94,.4)" onclick="bulkArt('elimina')">🗑 Elimina</button>
+            </span>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="width:28px"><input type="checkbox" id="artAll" onclick="toggleAllArt(this)" title="Seleziona tutti"></th>
+              <th class="sortable" onclick="ordinaArt('pin')">PIN<span id="srt-pin"></span></th>
+              <th class="sortable" onclick="ordinaArt('nome')">Nome<span id="srt-nome"></span></th>
+              <th class="colmob sortable" onclick="ordinaArt('telefono')">Telefono<span id="srt-telefono"></span></th>
+              <th class="sortable" onclick="ordinaArt('lingua')">Lingua<span id="srt-lingua"></span></th>
+              <th class="sortable" onclick="ordinaArt('ruolo')">Ruolo<span id="srt-ruolo"></span></th>
+              <th class="sortable" onclick="ordinaArt('attivo')">Stato<span id="srt-attivo"></span></th>
+            </tr></thead>
+            <tbody id="artBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB COMMESSE -->
+      <div id="tab-commesse" class="hide">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="label" id="comFormTitolo">Nuova commessa</div>
+          <div class="form-riga">
+            <input type="hidden" id="c_id">
+            <label>Codice<input id="c_codice" style="width:100px"></label>
+            <label>Descrizione (evento, città)<input id="c_descr" style="width:280px"></label>
+            <label>Cliente<input id="c_cliente" style="width:200px"></label>
+            <label class="chk" style="margin-top:14px"><input type="checkbox" id="c_attivo" checked> attiva (nel menu artigiani)</label>
+            <button class="b-em" onclick="salvaCom()">💾 Salva</button>
+            <button class="b-ghost" onclick="pulisciCom()">Nuova</button>
+            <button class="b-ghost" onclick="document.getElementById('impCom').click()">📥 Importa Excel</button>
+            <input type="file" id="impCom" accept=".xlsx,.xls" class="hide" onchange="importaCommesse(this)">
+          </div>
+          <div class="demo" style="text-align:left;padding:8px 0 0;">Importa Excel: legge il foglio <b>elenco</b> con le colonne <b>numero, cliente, EVENTO, luogo, stato</b> (es. ELENCO COMMESSE.xlsx); attiva nel menu solo le commesse con stato "confermato".</div>
+        </div>
+        <div class="card" style="overflow-x:auto;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+            <input id="comCerca" placeholder="🔎 cerca codice / descrizione / cliente" style="flex:1;min-width:180px" oninput="renderCommesse()">
+            <span id="comBulk" style="display:none;gap:8px;align-items:center;">
+              <span id="comSelN" style="font-size:12px;color:var(--muted)"></span>
+              <button class="b-ghost b-mini" onclick="bulkCom('attiva')">✓ Attiva</button>
+              <button class="b-ghost b-mini" onclick="bulkCom('spegni')">✕ Spegni</button>
+              <button class="b-ghost b-mini" style="color:#fb7185;border-color:rgba(244,63,94,.4)" onclick="bulkCom('elimina')">🗑 Elimina</button>
+            </span>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="width:28px"><input type="checkbox" id="comAll" onclick="toggleAllCom(this)" title="Seleziona tutte"></th>
+              <th class="sortable" onclick="ordinaCom('codice')">Codice<span id="srtc-codice"></span></th>
+              <th class="sortable" onclick="ordinaCom('descrizione')">Descrizione<span id="srtc-descrizione"></span></th>
+              <th class="colmob sortable" onclick="ordinaCom('cliente')">Cliente<span id="srtc-cliente"></span></th>
+              <th class="sortable" onclick="ordinaCom('attivo')">Stato<span id="srtc-attivo"></span></th>
+            </tr></thead>
+            <tbody id="comBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MODALE CHANGELOG -->
+      <div id="modChangelog" class="modal hide" onclick="if(event.target===this)chiudiChangelog()">
+        <div class="modal-card">
+          <div class="label">🗒️ Novità — Beta 3</div>
+          <div style="font-size:13px;line-height:1.7;max-height:60vh;overflow:auto">
+            <div>🆔 <b>Codice (PIN)</b> a fianco del nome (Ore, totali, CSV, Report)</div>
+            <div>✏️ <b>Matita</b>: correggi/chiudi una giornata dall'ufficio</div>
+            <div>🤖 <b>Chiusura automatica 23:59</b> (forfait 4h) per le giornate dimenticate</div>
+            <div>👷 <b>Scheda Artigiani</b>: ricerca, ordinamento, selezione multipla (attiva/disattiva/elimina)</div>
+            <div>🔒 <b>OPERATORE</b> separato: non timbra, entra solo in ufficio</div>
+            <div>⏱ <b>Fine giornata</b>: orario continuato + ripartizione su più cantieri</div>
+            <div>🛰️ <b>Anti-furbetto</b>: segnala se un dispositivo timbra per più persone</div>
+            <div>🎪 <b>Commesse</b>: ricerca, ordinamento, elimina</div>
+            <div>🔎 <b>Cerca/ordina</b> anche su Ore e Commesse</div>
+          </div>
+          <div style="height:12px"></div>
+          <button class="b-em" onclick="chiudiChangelog()">Chiudi</button>
+        </div>
+      </div>
+
+      <!-- MODALE CORREZIONE GIORNATA (ufficio) -->
+      <div id="modCorr" class="modal hide" onclick="if(event.target===this)chiudiCorr()">
+        <div class="modal-card">
+          <div class="label">Correggi / chiudi giornata</div>
+          <div id="cr_info" class="demo" style="text-align:left;padding:0 0 12px"></div>
+          <div class="form-riga">
+            <label>Commessa<input id="cr_com" style="width:110px"></label>
+            <label>Entrata<input id="cr_entrata" type="time" oninput="calcCorr()"></label>
+            <label>Pausa<input id="cr_pausa" type="time" oninput="calcCorr()"></label>
+            <label>Rientro<input id="cr_rientro" type="time" oninput="calcCorr()"></label>
+            <label>Uscita<input id="cr_uscita" type="time" oninput="calcCorr()"></label>
+          </div>
+          <div style="margin:14px 0;font-size:13px">Ore calcolate: <b id="cr_ore" style="color:var(--em2)">—</b> · <span id="cr_stato"></span></div>
+          <div class="toolbar">
+            <button class="b-em" onclick="salvaCorr()">💾 Salva</button>
+            <button class="b-ghost" onclick="chiudiCorr()">Annulla</button>
+          </div>
+          <div class="demo" style="text-align:left;padding:12px 0 0">Se compili l'<b>Uscita</b> la giornata viene chiusa e le ore ricalcolate. Lascia vuoto un campo per cancellarlo.</div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+  <div class="demo">Timbratrice Gesta · ufficio · i dati vivono su gesta-cloud.com</div>
+</div>
+
+<script>
+  var API='https://www.gesta-cloud.com/_functions';
+  var pinU = sessionStorage.getItem('pinUfficio') || '';
+  var db = { timbrature:[], artigiani:[], commesse:[] };
+
+  function chiama(metodo, path, body){
+    var opt={ method:metodo };
+    if(body){ opt.headers={'Content-Type':'application/json'}; opt.body=JSON.stringify(body); }
+    return fetch(API+path, opt).then(function(r){
+      return r.json().catch(function(){ throw new Error('Risposta non valida (HTTP '+r.status+')'); });
+    });
+  }
+  function erroreRete(){ alert('Non riesco a collegarmi. Controlla la connessione e riprova.'); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtData(d){ var p=String(d||'').split('-'); return p.length===3 ? p[2]+'/'+p[1]+'/'+p[0].slice(2) : d; }
+  function oreTxt(n){ return (n==null?'':String(n).replace('.',',')); }
+  // codice personale = PIN dell'artigiano (mostrato così com'è)
+  function pinDi(artigianoId){ var a=(db.artigiani||[]).find(function(x){ return x.id===artigianoId; }); return a?String(a.pin||''):''; }
+
+  // date di default: ultimi 7 giorni
+  (function(){
+    function iso(t){ var d=new Date(t); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+    document.getElementById('al').value = iso(Date.now());
+    document.getElementById('dal').value = iso(Date.now()-6*86400000);
+  })();
+
+  function entraUff(){
+    var p=document.getElementById('pinU').value.trim();
+    if(p.length<4){ alert('Inserisci il PIN operatore'); return; }
+    var btn=document.getElementById('btnEntra'); btn.textContent='Un attimo…';
+    carica(p, function(ok){
+      btn.textContent='Entra';
+      if(ok){ pinU=p; sessionStorage.setItem('pinUfficio', p);
+        document.getElementById('login').classList.add('hide');
+        document.getElementById('app').classList.remove('hide'); }
+    });
+  }
+
+  function carica(pin, fine){
+    chiama('POST','/registro',{pin:pin, dal:document.getElementById('dal').value, al:document.getElementById('al').value})
+      .then(function(res){
+        if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'PIN non valido'); fine&&fine(false); return; }
+        db = res; renderTutto(); fine&&fine(true);
+      }).catch(function(){ erroreRete(); fine&&fine(false); });
+  }
+
+  // il PIN in sessione non è più quello dell'utenza ufficio (cambiato da qui o da un altro PC)
+  function pinScaduto(err){
+    if(err!=='PIN ufficio non valido' || !pinU) return false;
+    alert('Il PIN ufficio è stato cambiato: entra di nuovo con il PIN nuovo.');
+    esci();
+    return true;
+  }
+  function aggiorna(){ carica(pinU); }
+
+  function esci(){ sessionStorage.removeItem('pinUfficio'); location.reload(); }
+
+  function vai(tab){
+    ['ore','artigiani','commesse'].forEach(function(t){
+      document.getElementById('tab-'+t).classList.toggle('hide', t!==tab);
+      document.getElementById('tab-btn-'+t).classList.toggle('on', t===tab);
+    });
+  }
+
+  function renderTutto(){ renderOre(); renderArtigiani(); renderCommesse(); }
+
+  // ---- ORE ----
+  // changelog (clic sul badge versione)
+  function apriChangelog(){ document.getElementById('modChangelog').classList.remove('hide'); }
+  function chiudiChangelog(){ document.getElementById('modChangelog').classList.add('hide'); }
+  // Ore: ricerca + ordinamento colonne
+  var oreSort={col:'data',dir:-1};
+  function oreVisibili(){
+    var box=document.getElementById('oreCerca');
+    var cerca=(box?box.value:'').trim().toLowerCase();
+    var lista=(db.timbrature||[]).filter(function(t){ return !cerca || (String(t.artigianoNome||'')+' '+String(t.commessaCodice||'')+' '+String(pinDi(t.artigianoId))+' '+fmtData(t.data)).toLowerCase().indexOf(cerca)>=0; });
+    var col=oreSort.col,d=oreSort.dir;
+    lista.sort(function(a,b){
+      var va,vb;
+      if(col==='ore'){ va=a.oreNette||0; vb=b.oreNette||0; }
+      else if(col==='codice'){ va=pinDi(a.artigianoId); vb=pinDi(b.artigianoId); }
+      else { va=String(a[col]==null?'':a[col]).toLowerCase(); vb=String(b[col]==null?'':b[col]).toLowerCase(); }
+      return (va<vb?-1:va>vb?1:0)*d;
+    });
+    return lista;
+  }
+  function ordinaOre(col){ if(oreSort.col===col) oreSort.dir*=-1; else { oreSort.col=col; oreSort.dir=1; } renderOre(); }
+  function renderOre(){
+    var tt=db.timbrature||[];
+    // totali per artigiano (solo giornate chiuse)
+    var tot={};
+    tt.forEach(function(t){ if(t.stato==='chiuso'){ var k=t.artigianoId||t.artigianoNome; if(!tot[k]) tot[k]={nome:t.artigianoNome, id:t.artigianoId, ore:0}; tot[k].ore+=(t.oreNette||0); } });
+    var chips=Object.keys(tot).map(function(k){ return tot[k]; }).sort(function(a,b){ return String(a.nome).localeCompare(String(b.nome)); }).map(function(o){
+      var p=pinDi(o.id), m=p?'<span style="color:var(--muted);font-family:monospace">'+esc(p)+'</span> · ':'';
+      return '<div class="chip">'+m+esc(o.nome)+' · <b>'+oreTxt(Math.round(o.ore*100)/100)+' ore</b></div>';
+    });
+    document.getElementById('totali').innerHTML = chips.length?chips.join(''):'<div class="demo" style="padding:0">Nessuna giornata chiusa nel periodo.</div>';
+
+    var body=document.getElementById('oreBody');
+    document.getElementById('oreVuoto').classList.toggle('hide', tt.length>0);
+    var oggiS=oggiStr();
+    // anti-furbetto: stesso dispositivo usato da PIÙ artigiani diversi nel periodo
+    var perDisp={};
+    tt.forEach(function(x){ if(x.dispositivo){ (perDisp[x.dispositivo]=perDisp[x.dispositivo]||{})[x.artigianoId]=true; } });
+    function dispCondiviso(t){ return t.dispositivo && Object.keys(perDisp[t.dispositivo]||{}).length>1; }
+    var righe=oreVisibili();
+    ['data','codice','artigianoNome','commessaCodice','ore','stato'].forEach(function(k){ var e=document.getElementById('srto-'+k); if(e) e.textContent=(oreSort.col===k?(oreSort.dir>0?' ▲':' ▼'):''); });
+    body.innerHTML = righe.map(function(t){
+      // giornata rimasta aperta in un giorno passato = timbratura mancata (manca il FINE)
+      var st = t.stato==='in corso'
+        ? (t.data<oggiS ? '<span class="b-st st-err">⚠ manca FINE</span>' : '<span class="b-st st-corso">in corso</span>')
+        : (!t.uscita ? '<span class="b-st st-corso">forfait 4h</span>' : '<span class="b-st st-reg">chiusa</span>');
+      var foto = t.foto ? '<a href="'+esc(t.foto)+'" target="_blank" rel="noopener">📷</a>' : '';
+      return '<tr>'+
+        '<td>'+fmtData(t.data)+'</td><td class="cod">'+esc(pinDi(t.artigianoId))+'</td><td><b>'+esc(t.artigianoNome)+'</b></td><td>'+esc(t.commessaCodice)+'</td>'+
+        '<td>'+esc(t.entrata||'')+'</td><td class="colmob">'+esc(t.pausa||'')+'</td><td class="colmob">'+esc(t.rientro||'')+'</td><td>'+esc(t.uscita||'')+'</td>'+
+        '<td><b>'+oreTxt(t.stato==='chiuso'?t.oreNette:'')+'</b></td><td class="colmob">'+foto+'</td><td>'+st+(dispCondiviso(t)?' <span class="b-st st-err" title="Stesso dispositivo usato da più artigiani — possibile timbratura per conto altrui">⚠ stesso disp.</span>':'')+' <button class="b-ghost b-mini" style="margin-left:4px" onclick="apriCorr(\''+t.id+'\')" title="Correggi / chiudi giornata">✏️</button></td>'+
+        '<td><input type="checkbox" class="approva-chk" '+(t.approvata?'checked':'')+' onchange="approva(\''+t.id+'\', this)"></td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  function approva(id, chk){
+    chk.disabled=true;
+    chiama('POST','/approva',{pin:pinU, id:id, approvata:chk.checked}).then(function(res){
+      chk.disabled=false;
+      if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'Errore'); chk.checked=!chk.checked; return; }
+      var t=(db.timbrature||[]).find(function(x){return x.id===id;}); if(t) t.approvata=res.approvata;
+    }).catch(function(){ chk.disabled=false; chk.checked=!chk.checked; erroreRete(); });
+  }
+
+  function oggiStr(){ var d=new Date(),p=function(n){return (n<10?'0':'')+n;}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+
+  // ---- REPORT DI FINE GIORNATA (per artigiano, stampabile) ----
+  // Pensato per più commesse nello stesso giorno: somma TUTTE le righe del giorno.
+  function reportGiorno(){
+    var giorno=document.getElementById('al').value || oggiStr();
+    var oggiS=oggiStr();
+    var tt=(db.timbrature||[]).filter(function(t){ return t.data===giorno; });
+    var visti={};
+    var righe=(db.artigiani||[]).filter(function(a){ return a.attivo && a.ruolo!=='ufficio'; }).map(function(a){
+      visti[a.id]=true;
+      var r=riepilogoArtigiano(a.nome, tt.filter(function(t){ return t.artigianoId===a.id; }), giorno, oggiS);
+      r.cod = a.pin?String(a.pin):''; return r;
+    });
+    // timbrature di persone fuori elenco attivi (es. disattivate dopo): non vanno perse
+    var orfani={};
+    tt.forEach(function(t){ if(!visti[t.artigianoId]) orfani[t.artigianoId]=t.artigianoNome; });
+    Object.keys(orfani).forEach(function(id){
+      var r=riepilogoArtigiano(orfani[id]+' (non in elenco)', tt.filter(function(t){ return t.artigianoId===id; }), giorno, oggiS);
+      r.cod = pinDi(id); righe.push(r);
+    });
+    var totOre=righe.reduce(function(s,r){ return s+r.ore; },0);
+    var quanti=righe.filter(function(r){ return r.cls!=='no'; }).length;
+    var w=window.open('','_blank');
+    if(!w){ alert('Il browser ha bloccato la finestra del report: consenti i popup per questa pagina.'); return; }
+    var css='body{font-family:Segoe UI,Arial,sans-serif;color:#111;padding:28px;max-width:800px;margin:0 auto}'+
+      'h1{font-size:20px;margin:0 0 2px} .sotto{color:#666;font-size:13px;margin-bottom:18px}'+
+      'table{border-collapse:collapse;width:100%} th,td{border:1px solid #bbb;padding:8px 10px;text-align:left;font-size:13px}'+
+      'th{background:#f2f2f2} .ok{color:#0a7a4b;font-weight:700} .warn{color:#c81e3f;font-weight:700}'+
+      '.no{color:#888} .corso{color:#b46900;font-weight:700} .tot{margin-top:14px;font-weight:700;font-size:14px}'+
+      '.firma{margin-top:40px;color:#666;font-size:12px}';
+    var html='<h1>Report giornata — '+fmtData(giorno)+'</h1>'+
+      '<div class="sotto">Timbratrice Gesta · Beta 2 · generato il '+fmtData(oggiS)+'</div>'+
+      '<table><tr><th>Codice</th><th>Artigiano</th><th>Esito</th><th>Dettaglio (commessa · orari)</th></tr>'+
+      righe.map(function(r){ return '<tr><td>'+esc(r.cod||'')+'</td><td>'+esc(r.nome)+'</td><td class="'+r.cls+'">'+r.esito+'</td><td>'+esc(r.det)+'</td></tr>'; }).join('')+
+      '</table>'+
+      '<div class="tot">Totale: '+oreTxt(Math.round(totOre*100)/100)+' ore · '+quanti+' artigiani al lavoro</div>'+
+      '<div class="firma">Verifiche: ⚠ manca FINE = giornata mai chiusa (da sistemare) · "non ha timbrato" = nessuna entrata quel giorno.</div>';
+    w.document.write('<html><head><title>Report '+giorno+'</title><style>'+css+'</style></head><body>'+html+'</body></html>');
+    w.document.close(); w.focus();
+    setTimeout(function(){ try{ w.print(); }catch(e){} }, 400);
+  }
+  function riepilogoArtigiano(nome, mie, giorno, oggiS){
+    if(!mie.length) return {nome:nome, esito:'non ha timbrato', cls:'no', det:'—', ore:0};
+    var aperte=mie.some(function(t){ return t.stato!=='chiuso'; });
+    var ore=mie.reduce(function(s,t){ return s+(t.stato==='chiuso'?(t.oreNette||0):0); },0);
+    var det=mie.map(function(t){
+      var p=[(t.commessaCodice||'?'), t.entrata||''];
+      if(t.pausa) p.push('pausa '+t.pausa);
+      if(t.rientro) p.push('rientro '+t.rientro);
+      p.push(t.uscita?('uscita '+t.uscita):'(aperta)');
+      return p.join(' · ');
+    }).join('  |  ');
+    if(aperte && giorno<oggiS) return {nome:nome, esito:'⚠ manca FINE', cls:'warn', det:det, ore:ore};
+    if(aperte) return {nome:nome, esito:'ancora al lavoro', cls:'corso', det:det, ore:ore};
+    return {nome:nome, esito:'✓ '+oreTxt(Math.round(ore*100)/100)+' ore', cls:'ok', det:det, ore:ore};
+  }
+
+  function scaricaCsv(){
+    var righe=[['Data','Codice','Artigiano','Commessa','Entrata','Pausa','Rientro','Uscita','Ore nette','Stato','Approvata']];
+    (db.timbrature||[]).forEach(function(t){
+      righe.push([t.data, pinDi(t.artigianoId), t.artigianoNome, t.commessaCodice, t.entrata||'', t.pausa||'', t.rientro||'', t.uscita||'', oreTxt(t.stato==='chiuso'?t.oreNette:''), t.stato, t.approvata?'SI':'NO']);
+    });
+    var csv='﻿'+righe.map(function(r){ return r.map(function(v){ return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'; }).join(';'); }).join('\r\n');
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    a.download='ore_'+document.getElementById('dal').value+'_'+document.getElementById('al').value+'.csv';
+    a.click(); setTimeout(function(){URL.revokeObjectURL(a.href);},2000);
+  }
+
+  // ---- CORREZIONE / CHIUSURA GIORNATA (ufficio) ----
+  var corrId=null;
+  function apriCorr(id){
+    var t=(db.timbrature||[]).find(function(x){ return x.id===id; }); if(!t) return;
+    corrId=id;
+    document.getElementById('cr_info').innerHTML='<b>'+esc(t.artigianoNome)+'</b> · '+fmtData(t.data)+' · cod '+esc(pinDi(t.artigianoId));
+    document.getElementById('cr_com').value=t.commessaCodice||'';
+    document.getElementById('cr_entrata').value=t.entrata||'';
+    document.getElementById('cr_pausa').value=t.pausa||'';
+    document.getElementById('cr_rientro').value=t.rientro||'';
+    document.getElementById('cr_uscita').value=t.uscita||'';
+    calcCorr();
+    document.getElementById('modCorr').classList.remove('hide');
+  }
+  function chiudiCorr(){ document.getElementById('modCorr').classList.add('hide'); corrId=null; }
+  // stessa formula del backend: (uscita-entrata) - (rientro-pausa)
+  function oreClient(e,p,r,u){
+    var m=function(h){ if(!h) return null; var x=String(h).split(':'); return (+x[0])*60+(+x[1]); };
+    var E=m(e),U=m(u),P=m(p),R=m(r);
+    if(E==null||U==null) return null;
+    var min=U-E; if(P!=null&&R!=null&&R>P) min-=(R-P);
+    return Math.round((min/60)*100)/100;
+  }
+  function calcCorr(){
+    var e=document.getElementById('cr_entrata').value, p=document.getElementById('cr_pausa').value,
+        r=document.getElementById('cr_rientro').value, u=document.getElementById('cr_uscita').value;
+    var o=oreClient(e,p,r,u);
+    document.getElementById('cr_ore').textContent=(o==null?'—':oreTxt(o)+' ore');
+    document.getElementById('cr_stato').innerHTML=u?'<span class="b-st st-reg">verrà chiusa</span>':'<span class="b-st st-corso">resta in corso</span>';
+  }
+  function salvaCorr(){
+    if(!corrId) return;
+    var body={ pin:pinU, id:corrId,
+      commessaCodice:document.getElementById('cr_com').value.trim(),
+      entrata:document.getElementById('cr_entrata').value,
+      pausa:document.getElementById('cr_pausa').value,
+      rientro:document.getElementById('cr_rientro').value,
+      uscita:document.getElementById('cr_uscita').value };
+    chiama('POST','/correggi',body).then(function(res){
+      if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'Errore nel salvataggio'); return; }
+      chiudiCorr(); aggiorna();
+    }).catch(erroreRete);
+  }
+
+  // ---- ARTIGIANI ----
+  var artSel={}, artSort={col:'nome',dir:1};
+  function artigianiVisibili(){
+    var box=document.getElementById('artCerca');
+    var cerca=(box?box.value:'').trim().toLowerCase();
+    var lista=(db.artigiani||[]).filter(function(a){ return !cerca || (String(a.nome||'')+' '+String(a.pin||'')+' '+String(a.telefono||'')).toLowerCase().indexOf(cerca)>=0; });
+    var c=artSort.col, d=artSort.dir;
+    lista.sort(function(a,b){
+      var va,vb;
+      if(c==='attivo'){ va=a.attivo?1:0; vb=b.attivo?1:0; }
+      else if(c==='pin'){ va=String(a.pin||''); vb=String(b.pin||''); }
+      else { va=String(a[c]==null?'':a[c]).toLowerCase(); vb=String(b[c]==null?'':b[c]).toLowerCase(); }
+      return (va<vb?-1:va>vb?1:0)*d;
+    });
+    return lista;
+  }
+  function ordinaArt(col){ if(artSort.col===col) artSort.dir*=-1; else { artSort.col=col; artSort.dir=1; } renderArtigiani(); }
+  function selArt(id,chk){ if(chk.checked) artSel[id]=true; else delete artSel[id]; aggiornaBulkBar(); }
+  function toggleAllArt(chk){ artSel={}; if(chk.checked) artigianiVisibili().forEach(function(a){ artSel[a.id]=true; }); renderArtigiani(); }
+  function aggiornaBulkBar(){
+    var n=Object.keys(artSel).length, bulk=document.getElementById('artBulk');
+    if(bulk){ bulk.style.display=n?'inline-flex':'none'; document.getElementById('artSelN').textContent=n+' selezionati'; }
+  }
+  function renderArtigiani(){
+    var lista=artigianiVisibili();
+    ['pin','nome','telefono','lingua','ruolo','attivo'].forEach(function(k){ var e=document.getElementById('srt-'+k); if(e) e.textContent=(artSort.col===k?(artSort.dir>0?' ▲':' ▼'):''); });
+    document.getElementById('artBody').innerHTML=lista.map(function(a){
+      var st=a.attivo?'<span class="b-st st-app">attivo</span>':'<span class="b-st st-off">disattivo</span>';
+      var ru=a.ruolo==='ufficio'?'<span class="b-st st-corso">ufficio</span>':esc(a.ruolo||'');
+      return '<tr class="cliccabile" onclick="editArtById(\''+a.id+'\')">'+
+        '<td><input type="checkbox" class="art-chk" '+(artSel[a.id]?'checked':'')+' onclick="event.stopPropagation();selArt(\''+a.id+'\',this)"></td>'+
+        '<td class="cod">'+esc(a.pin)+'</td><td><b>'+esc(a.nome)+'</b></td>'+
+        '<td class="colmob">'+esc(a.telefono||'')+'</td><td>'+esc(a.lingua||'')+'</td><td>'+ru+'</td><td>'+st+'</td></tr>';
+    }).join('');
+    aggiornaBulkBar();
+    var all=document.getElementById('artAll'); if(all) all.checked=(lista.length>0 && lista.every(function(a){ return artSel[a.id]; }));
+  }
+  function bulkArt(azione){
+    var sel=(db.artigiani||[]).filter(function(a){ return artSel[a.id]; });
+    if(!sel.length){ alert('Seleziona almeno un artigiano.'); return; }
+    var uff=sel.filter(function(a){ return a.ruolo==='ufficio'; });
+    if(azione==='elimina'){
+      if(uff.length){ alert('Non puoi eliminare l\'utenza Ufficio ('+uff.map(function(a){return a.nome;}).join(', ')+'): deselezionala.'); return; }
+      if(!confirm('Eliminare DEFINITIVAMENTE '+sel.length+' artigiano/i?\n\n'+sel.map(function(a){return '· '+a.nome+' (PIN '+a.pin+')';}).join('\n')+'\n\nLe timbrature storiche restano. Operazione IRREVERSIBILE.')) return;
+      var listaE=sel.map(function(a){ a._eti=a.nome+' ('+a.pin+')'; return a; });
+      salvaInSerie(listaE, function(a){ return chiama('POST','/eliminaArtigiano',{pin:pinU, id:a.id}); }, function(okN,err){ artSel={}; var m='Eliminati: '+okN+'/'+listaE.length; if(err.length)m+='\n\nProblemi:\n'+err.join('\n'); alert(m); aggiorna(); });
+      return;
+    }
+    var attivo=(azione==='attiva');
+    if(uff.length && !attivo) alert('Nota: stai disattivando anche l\'utenza Ufficio — con quel PIN non potresti più entrare.');
+    if(!confirm((attivo?'Attivare':'Disattivare')+' '+sel.length+' artigiano/i?')) return;
+    var lista2=sel.map(function(a){ a._eti=a.nome+' ('+a.pin+')'; return a; });
+    salvaInSerie(lista2, function(a){ return chiama('POST','/salvaArtigiano',{pin:pinU, artigiano:{id:a.id,nome:a.nome,telefono:a.telefono,lingua:a.lingua,pin:a.pin,attivo:attivo,ruolo:a.ruolo}}); }, function(okN,err){ artSel={}; var m='Aggiornati: '+okN+'/'+lista2.length; if(err.length)m+='\n\nProblemi:\n'+err.join('\n'); alert(m); aggiorna(); });
+  }
+  function editArtById(id){
+    var a=(db.artigiani||[]).find(function(x){ return x.id===id; }); if(!a) return;
+    document.getElementById('a_id').value=a.id;
+    document.getElementById('a_nome').value=a.nome||'';
+    document.getElementById('a_tel').value=a.telefono||'';
+    document.getElementById('a_lingua').value=(a.lingua||'IT').toUpperCase();
+    document.getElementById('a_pin').value=a.pin||'';
+    document.getElementById('a_attivo').checked=!!a.attivo;
+    document.getElementById('a_ufficio').checked=(a.ruolo==='ufficio');
+    document.getElementById('a_ufficio').dataset.ruoloPrec=a.ruolo||'';
+    document.getElementById('artFormTitolo').textContent='Modifica: '+(a.nome||'');
+    window.scrollTo(0,0);
+  }
+  function pulisciArt(){
+    ['a_id','a_nome','a_tel','a_pin'].forEach(function(id){document.getElementById(id).value='';});
+    document.getElementById('a_lingua').value='IT';
+    document.getElementById('a_attivo').checked=true;
+    document.getElementById('a_ufficio').checked=false;
+    document.getElementById('a_ufficio').dataset.ruoloPrec='';
+    document.getElementById('artFormTitolo').textContent='Nuovo artigiano';
+  }
+  function salvaArt(){
+    var uff=document.getElementById('a_ufficio');
+    var ruolo = uff.checked ? 'ufficio' : ((uff.dataset.ruoloPrec==='ufficio') ? '' : (uff.dataset.ruoloPrec||''));
+    var art={ id:document.getElementById('a_id').value||null,
+      nome:document.getElementById('a_nome').value,
+      telefono:document.getElementById('a_tel').value,
+      lingua:document.getElementById('a_lingua').value,
+      pin:document.getElementById('a_pin').value,
+      attivo:document.getElementById('a_attivo').checked,
+      ruolo:ruolo };
+    chiama('POST','/salvaArtigiano',{pin:pinU, artigiano:art}).then(function(res){
+      if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'Errore nel salvataggio'); return; }
+      // se ho cambiato il PIN della MIA utenza, la sessione segue il PIN nuovo
+      var me=(db.artigiani||[]).find(function(x){ return x.pin===pinU; });
+      var nuovoPin=String(art.pin||'').trim();
+      if(me && art.id===me.id && nuovoPin && nuovoPin!==pinU){
+        pinU=nuovoPin; sessionStorage.setItem('pinUfficio', pinU);
+      }
+      pulisciArt(); aggiorna();
+    }).catch(erroreRete);
+  }
+
+  // ---- COMMESSE ----
+  var comSel={}, comSort={col:'codice',dir:1};
+  function commesseVisibili(){
+    var box=document.getElementById('comCerca');
+    var cerca=(box?box.value:'').trim().toLowerCase();
+    var lista=(db.commesse||[]).filter(function(c){ return !cerca || (String(c.codice||'')+' '+String(c.descrizione||'')+' '+String(c.cliente||'')).toLowerCase().indexOf(cerca)>=0; });
+    var col=comSort.col,d=comSort.dir;
+    lista.sort(function(a,b){
+      var va,vb;
+      if(col==='attivo'){ va=a.attivo?1:0; vb=b.attivo?1:0; }
+      else { va=String(a[col]==null?'':a[col]).toLowerCase(); vb=String(b[col]==null?'':b[col]).toLowerCase(); }
+      return (va<vb?-1:va>vb?1:0)*d;
+    });
+    return lista;
+  }
+  function ordinaCom(col){ if(comSort.col===col) comSort.dir*=-1; else { comSort.col=col; comSort.dir=1; } renderCommesse(); }
+  function selCom(id,chk){ if(chk.checked) comSel[id]=true; else delete comSel[id]; aggiornaBulkBarCom(); }
+  function toggleAllCom(chk){ comSel={}; if(chk.checked) commesseVisibili().forEach(function(c){ comSel[c.id]=true; }); renderCommesse(); }
+  function aggiornaBulkBarCom(){ var n=Object.keys(comSel).length, b=document.getElementById('comBulk'); if(b){ b.style.display=n?'inline-flex':'none'; document.getElementById('comSelN').textContent=n+' selezionate'; } }
+  function renderCommesse(){
+    var lista=commesseVisibili();
+    ['codice','descrizione','cliente','attivo'].forEach(function(k){ var e=document.getElementById('srtc-'+k); if(e) e.textContent=(comSort.col===k?(comSort.dir>0?' ▲':' ▼'):''); });
+    document.getElementById('comBody').innerHTML=lista.map(function(c){
+      var st=c.attivo?'<span class="b-st st-app">attiva</span>':'<span class="b-st st-off">spenta</span>';
+      return '<tr class="cliccabile" onclick="editComById(\''+c.id+'\')">'+
+        '<td><input type="checkbox" class="art-chk" '+(comSel[c.id]?'checked':'')+' onclick="event.stopPropagation();selCom(\''+c.id+'\',this)"></td>'+
+        '<td><b>'+esc(c.codice)+'</b></td><td>'+esc(c.descrizione||'')+'</td><td class="colmob">'+esc(c.cliente||'')+'</td><td>'+st+'</td></tr>';
+    }).join('');
+    aggiornaBulkBarCom();
+    var all=document.getElementById('comAll'); if(all) all.checked=(lista.length>0 && lista.every(function(c){ return comSel[c.id]; }));
+  }
+  function bulkCom(azione){
+    var sel=(db.commesse||[]).filter(function(c){ return comSel[c.id]; });
+    if(!sel.length){ alert('Seleziona almeno una commessa.'); return; }
+    if(azione==='elimina'){
+      if(!confirm('Eliminare DEFINITIVAMENTE '+sel.length+' commessa/e?\n\n'+sel.map(function(c){return '· '+c.codice+' '+(c.descrizione||'');}).join('\n')+'\n\nLe timbrature storiche restano. Irreversibile.')) return;
+      var le=sel.map(function(c){ c._eti=String(c.codice); return c; });
+      salvaInSerie(le, function(c){ return chiama('POST','/eliminaCommessa',{pin:pinU, id:c.id}); }, function(okN,err){ comSel={}; var m='Eliminate: '+okN+'/'+le.length; if(err.length)m+='\n\nProblemi:\n'+err.join('\n'); alert(m); aggiorna(); });
+      return;
+    }
+    var attiva=(azione==='attiva');
+    if(!confirm((attiva?'Attivare':'Spegnere')+' '+sel.length+' commessa/e?')) return;
+    var le=sel.map(function(c){ c._eti=String(c.codice); return c; });
+    salvaInSerie(le, function(c){ return chiama('POST','/salvaCommessa',{pin:pinU, commessa:{id:c.id,codice:c.codice,descrizione:c.descrizione,cliente:c.cliente,attivo:attiva}}); }, function(okN,err){ comSel={}; var m='Aggiornate: '+okN+'/'+le.length; if(err.length)m+='\n\nProblemi:\n'+err.join('\n'); alert(m); aggiorna(); });
+  }
+  function editComById(id){
+    var c=(db.commesse||[]).find(function(x){ return x.id===id; }); if(!c) return;
+    document.getElementById('c_id').value=c.id;
+    document.getElementById('c_codice').value=c.codice||'';
+    document.getElementById('c_descr').value=c.descrizione||'';
+    document.getElementById('c_cliente').value=c.cliente||'';
+    document.getElementById('c_attivo').checked=!!c.attivo;
+    document.getElementById('comFormTitolo').textContent='Modifica: '+(c.codice||'');
+    window.scrollTo(0,0);
+  }
+  function pulisciCom(){
+    ['c_id','c_codice','c_descr','c_cliente'].forEach(function(id){document.getElementById(id).value='';});
+    document.getElementById('c_attivo').checked=true;
+    document.getElementById('comFormTitolo').textContent='Nuova commessa';
+  }
+  function salvaCom(){
+    var com={ id:document.getElementById('c_id').value||null,
+      codice:document.getElementById('c_codice').value,
+      descrizione:document.getElementById('c_descr').value,
+      cliente:document.getElementById('c_cliente').value,
+      attivo:document.getElementById('c_attivo').checked };
+    chiama('POST','/salvaCommessa',{pin:pinU, commessa:com}).then(function(res){
+      if(!res.ok){ if(!pinScaduto(res.error)) alert(res.error||'Errore nel salvataggio'); return; }
+      pulisciCom(); aggiorna();
+    }).catch(erroreRete);
+  }
+
+  // ---- IMPORTA DA EXCEL (SheetJS caricato dal CDN solo quando serve) ----
+  function conXLSX(poi){
+    if(window.XLSX){ poi(); return; }
+    var s=document.createElement('script');
+    s.src='https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+    s.onload=poi;
+    s.onerror=function(){ alert('Non riesco a scaricare il lettore Excel. Controlla la connessione e riprova.'); };
+    document.head.appendChild(s);
+  }
+  function leggiFoglio(file, nomePreferito, poi){
+    conXLSX(function(){
+      var fr=new FileReader();
+      fr.onload=function(e){
+        try{
+          var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+          var foglio = wb.SheetNames.find(function(n){return n.trim().toLowerCase()===nomePreferito;}) || wb.SheetNames[0];
+          poi(XLSX.utils.sheet_to_json(wb.Sheets[foglio],{defval:''}));
+        }catch(err){ alert('Non riesco a leggere il file: '+err.message); }
+      };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+  // valore della prima colonna il cui nome combacia (ignora maiuscole/spazi)
+  function colonna(riga, nomi){
+    var chiavi=Object.keys(riga);
+    for(var i=0;i<nomi.length;i++) for(var j=0;j<chiavi.length;j++)
+      if(chiavi[j].trim().toLowerCase()===nomi[i]) return riga[chiavi[j]];
+    return '';
+  }
+  function pinLibero(usati){
+    for(var t=0;t<5000;t++){
+      var p=String(1000+Math.floor(Math.random()*9000));
+      if(!usati[p]){ usati[p]=true; return p; }
+    }
+    return '';
+  }
+  // salva una riga alla volta (il server controlla i PIN), poi riepiloga
+  function salvaInSerie(lista, fnSalva, fine){
+    var okN=0, errori=[];
+    (function uno(i){
+      if(i>=lista.length){ fine(okN, errori); return; }
+      fnSalva(lista[i]).then(function(res){
+        if(res.ok) okN++; else errori.push(lista[i]._eti+': '+(res.error||'errore'));
+        uno(i+1);
+      }).catch(function(){ errori.push(lista[i]._eti+': errore di rete'); uno(i+1); });
+    })(0);
+  }
+
+  function importaArtigiani(inp){
+    var f=inp.files && inp.files[0]; inp.value=''; if(!f) return;
+    leggiFoglio(f, 'artigiani', function(righe){
+      var usati={}; (db.artigiani||[]).forEach(function(a){ usati[String(a.pin)]=true; });
+      var nuovi=[], aggiornati=[];
+      righe.forEach(function(r){
+        var nome=(String(colonna(r,['nome'])).trim()+' '+String(colonna(r,['cognome'])).trim()).trim();
+        if(!nome) return;
+        var tel=String(colonna(r,['telefono','tel','cellulare'])).trim();
+        var lin=String(colonna(r,['lingua'])).trim().toUpperCase()||'IT';
+        if(['IT','ES','RO'].indexOf(lin)<0) lin='IT';
+        var gia=(db.artigiani||[]).find(function(a){ return String(a.nome).trim().toLowerCase()===nome.toLowerCase(); });
+        if(gia) aggiornati.push({_eti:nome, id:gia.id, nome:nome, telefono:tel||gia.telefono||'', lingua:lin, pin:gia.pin, attivo:gia.attivo, ruolo:gia.ruolo||''});
+        else nuovi.push({_eti:nome, id:null, nome:nome, telefono:tel, lingua:lin, pin:pinLibero(usati), attivo:true, ruolo:''});
+      });
+      if(!nuovi.length && !aggiornati.length){ alert('Nel file non ho trovato righe con Nome/Cognome.'); return; }
+      if(!confirm('Dal file "'+f.name+'":\n· '+nuovi.length+' artigiani NUOVI (PIN generato automaticamente)\n· '+aggiornati.length+' già presenti (aggiorno telefono e lingua, il PIN resta)\n\nProcedo?')) return;
+      salvaInSerie(nuovi.concat(aggiornati), function(a){
+        return chiama('POST','/salvaArtigiano',{pin:pinU, artigiano:{id:a.id,nome:a.nome,telefono:a.telefono,lingua:a.lingua,pin:a.pin,attivo:a.attivo,ruolo:a.ruolo}});
+      }, function(okN,errori){
+        var m='Import finito: '+okN+' salvati.';
+        if(nuovi.length) m+='\n\nPIN NUOVI da consegnare:\n'+nuovi.map(function(n){return n.nome+' → '+n.pin;}).join('\n');
+        if(errori.length) m+='\n\nProblemi:\n'+errori.join('\n');
+        alert(m); aggiorna();
+      });
+    });
+  }
+
+  function importaCommesse(inp){
+    var f=inp.files && inp.files[0]; inp.value=''; if(!f) return;
+    leggiFoglio(f, 'elenco', function(righe){
+      var nuove=[], aggiornate=[];
+      righe.forEach(function(r){
+        var codice=String(colonna(r,['numero','codice','commessa'])).trim();
+        if(!/^\d{3,}$/.test(codice)) return;
+        var descr=String(colonna(r,['evento','descrizione'])).trim();
+        var luogo=String(colonna(r,['luogo','città','citta'])).trim();
+        if(luogo && descr.toLowerCase().indexOf(luogo.toLowerCase())<0) descr=(descr?descr+' ':'')+'('+luogo+')';
+        var stato=String(colonna(r,['stato'])).trim().toLowerCase();
+        var gia=(db.commesse||[]).find(function(c){ return String(c.codice).trim()===codice; });
+        var com={_eti:codice, id:gia?gia.id:null, codice:codice,
+                 descrizione:descr, cliente:String(colonna(r,['cliente'])).trim(),
+                 attivo:stato.indexOf('conferm')===0};
+        if(gia) aggiornate.push(com); else nuove.push(com);
+      });
+      if(!nuove.length && !aggiornate.length){ alert('Nel file non ho trovato commesse (colonna "numero").'); return; }
+      if(!confirm('Dal file "'+f.name+'":\n· '+nuove.length+' commesse NUOVE\n· '+aggiornate.length+' da aggiornare\n(nel menu artigiani vanno solo quelle con stato "confermato")\n\nProcedo?')) return;
+      salvaInSerie(nuove.concat(aggiornate), function(c){
+        return chiama('POST','/salvaCommessa',{pin:pinU, commessa:{id:c.id,codice:c.codice,descrizione:c.descrizione,cliente:c.cliente,attivo:c.attivo}});
+      }, function(okN,errori){
+        var m='Import finito: '+okN+' salvate.';
+        if(errori.length) m+='\n\nProblemi:\n'+errori.join('\n');
+        alert(m); aggiorna();
+      });
+    });
+  }
+
+  // auto-login se il PIN è già in sessione
+  if(pinU){
+    carica(pinU, function(ok){
+      if(ok){ document.getElementById('login').classList.add('hide'); document.getElementById('app').classList.remove('hide'); }
+      else { sessionStorage.removeItem('pinUfficio'); pinU=''; }
+    });
+  }
+  document.getElementById('pinU').addEventListener('keydown', function(e){ if(e.key==='Enter') entraUff(); });
+</script>
+</body>
+</html>
