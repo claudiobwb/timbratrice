@@ -49,12 +49,12 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="logo">GA</div>
+    <div class="logo"><img src="logo.png" alt="GESTA" style="width:100%;height:100%;object-fit:contain;padding:3px"></div>
     <div>
       <h1>Timbratrice <span style="color:var(--em2)">Gesta</span></h1>
       <div class="sub">Allestimenti S.r.l.</div>
     </div>
-    <span class="badge">Beta 3</span>
+    <span class="badge" onclick="apriChangelog()" style="cursor:pointer" title="Novità">Beta 3</span>
   </header>
   <main>
 
@@ -90,6 +90,7 @@
         <input id="cam" type="file" accept="image/*" capture="environment" class="hide" onchange="foto(this)">
         <img id="preview" class="preview">
       </div>
+      <div style="text-align:center;font-size:12px;color:var(--em2);margin-bottom:4px">📍 La timbratura registra la tua posizione</div>
       <button class="big b-em" id="btnEntrata" onclick="timbra('ENTRATA')">▶ Entrata</button>
       <button class="big b-ghost" id="btnMie1" onclick="apriMie()">📋 Le mie ore</button>
     </section>
@@ -107,6 +108,7 @@
         <button class="big b-amber" id="btnPausa" onclick="timbra('PAUSA')">⏸ Pausa</button>
         <button class="big b-blue" id="btnRientro" onclick="timbra('RIENTRO')">↩ Rientro</button>
       </div>
+      <div style="text-align:center;font-size:12px;color:var(--em2);margin-bottom:4px">📍 Posizione registrata</div>
       <button class="big b-rose" id="btnFine" onclick="apriFine()">⏹ Fine giornata</button>
       <button class="big b-ghost" id="btnMie2" onclick="apriMie()">📋 Le mie ore</button>
     </section>
@@ -158,6 +160,20 @@
     </section>
 
   </main>
+  <div id="modChangelog" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)chiudiChangelog()">
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;max-width:380px;width:100%">
+      <div class="label">🗒️ Novità — Beta 3</div>
+      <div style="font-size:13px;line-height:1.7;max-height:60vh;overflow:auto">
+        <div>⏱ <b>Fine giornata</b>: scegli orario continuato o pausa, e più cantieri</div>
+        <div>🌐 Messaggi nella tua lingua (IT/ES/RO)</div>
+        <div>📋 <b>Le mie ore</b> degli ultimi 7 giorni</div>
+        <div>📍 La posizione viene registrata alla timbratura</div>
+        <div>🔒 Accesso ufficio separato</div>
+      </div>
+      <div style="height:12px"></div>
+      <button class="big b-em" onclick="chiudiChangelog()">Chiudi</button>
+    </div>
+  </div>
   <div class="demo">Timbratrice Gesta · i dati vengono salvati su gesta-cloud.com · <a href="ufficio.html" style="color:#a1a1aa">🔒 Ufficio</a></div>
 </div>
 
@@ -165,6 +181,9 @@
   // Backend Velo su Wix (vedi wix-velo/http-functions.js)
   var API='https://www.gesta-cloud.com/_functions';
   var me=null, foto64=null, comm='', occupato=false, pinCorrente='', schermataPrec='home', apOggi=null;
+  // id dispositivo anonimo (anti-furbetto): invisibile all'artigiano, serve all'ufficio
+  // per accorgersi se UN solo telefono timbra per PIÙ persone diverse.
+  var deviceId=(function(){ try{ var d=localStorage.getItem('tg_dev'); if(!d){ d='d-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10); localStorage.setItem('tg_dev',d); } return d; }catch(e){ return ''; } })();
 
   // --- Lingua madre (campo "lingua" dell'artigiano: IT / ES / RO) ---
   var T={
@@ -338,7 +357,7 @@
 
   function timbra(tipo){
     if(occupato) return;
-    var body={tipo:tipo, artigianoId:me.id, artigianoNome:me.nome};
+    var body={tipo:tipo, artigianoId:me.id, artigianoNome:me.nome, dispositivo:deviceId};
     if(tipo==='ENTRATA'){
       comm=document.getElementById('commessa').value;
       if(!comm){ alert(L.servePrimaCommessa); return; }
@@ -441,7 +460,7 @@
   }
   function confermaFine(){
     if(occupato) return;
-    var body={tipo:'FINE', artigianoId:me.id, artigianoNome:me.nome, pausaPranzo:finePausa};
+    var body={tipo:'FINE', artigianoId:me.id, artigianoNome:me.nome, pausaPranzo:finePausa, dispositivo:deviceId};
     if(fineMulti){
       var resto=Math.round((fineTotale - sommaExtra())*100)/100;
       if(resto<0 || !ripExtra.every(function(r){ return r.codice && (parseFloat(r.ore)||0)>0; })){ alert(L.fineNonQuadra); return; }
@@ -486,6 +505,8 @@
     }).catch(function(){ box.innerHTML='<div class="demo">'+L.errRete+'</div>'; });
   }
   function chiudiMie(){ show(schermataPrec); }
+  function apriChangelog(){ document.getElementById('modChangelog').style.display='flex'; }
+  function chiudiChangelog(){ document.getElementById('modChangelog').style.display='none'; }
 </script>
 </body>
 </html>

@@ -64,12 +64,12 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="logo">GA</div>
+    <div class="logo"><img src="logo.png" alt="GESTA" style="width:100%;height:100%;object-fit:contain;padding:3px"></div>
     <div>
       <h1>Timbratrice <span style="color:var(--em2)">Gesta</span> · Ufficio</h1>
       <div class="sub">centro di controllo operatore</div>
     </div>
-    <span class="badge">Beta 3</span>
+    <span class="badge" onclick="apriChangelog()" style="cursor:pointer" title="Novità">Beta 3</span>
   </header>
   <main>
 
@@ -106,11 +106,15 @@
           <div class="tot" id="totali"></div>
         </div>
         <div class="card" style="overflow-x:auto;">
+          <input id="oreCerca" placeholder="🔎 cerca artigiano / codice / commessa / data" style="width:100%;margin-bottom:12px" oninput="renderOre()">
           <table>
             <thead><tr>
-              <th>Data</th><th>Codice</th><th>Artigiano</th><th>Commessa</th>
+              <th class="sortable" onclick="ordinaOre('data')">Data<span id="srto-data"></span></th>
+              <th class="sortable" onclick="ordinaOre('codice')">Codice<span id="srto-codice"></span></th>
+              <th class="sortable" onclick="ordinaOre('artigianoNome')">Artigiano<span id="srto-artigianoNome"></span></th>
+              <th class="sortable" onclick="ordinaOre('commessaCodice')">Commessa<span id="srto-commessaCodice"></span></th>
               <th>Entrata</th><th class="colmob">Pausa</th><th class="colmob">Rientro</th><th>Uscita</th>
-              <th>Ore</th><th class="colmob">Foto</th><th>Stato</th><th>OK</th>
+              <th class="sortable" onclick="ordinaOre('ore')">Ore<span id="srto-ore"></span></th><th class="colmob">Foto</th><th class="sortable" onclick="ordinaOre('stato')">Stato<span id="srto-stato"></span></th><th>OK</th>
             </tr></thead>
             <tbody id="oreBody"></tbody>
           </table>
@@ -180,10 +184,45 @@
           <div class="demo" style="text-align:left;padding:8px 0 0;">Importa Excel: legge il foglio <b>elenco</b> con le colonne <b>numero, cliente, EVENTO, luogo, stato</b> (es. ELENCO COMMESSE.xlsx); attiva nel menu solo le commesse con stato "confermato".</div>
         </div>
         <div class="card" style="overflow-x:auto;">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+            <input id="comCerca" placeholder="🔎 cerca codice / descrizione / cliente" style="flex:1;min-width:180px" oninput="renderCommesse()">
+            <span id="comBulk" style="display:none;gap:8px;align-items:center;">
+              <span id="comSelN" style="font-size:12px;color:var(--muted)"></span>
+              <button class="b-ghost b-mini" onclick="bulkCom('attiva')">✓ Attiva</button>
+              <button class="b-ghost b-mini" onclick="bulkCom('spegni')">✕ Spegni</button>
+              <button class="b-ghost b-mini" style="color:#fb7185;border-color:rgba(244,63,94,.4)" onclick="bulkCom('elimina')">🗑 Elimina</button>
+            </span>
+          </div>
           <table>
-            <thead><tr><th>Codice</th><th>Descrizione</th><th class="colmob">Cliente</th><th>Stato</th></tr></thead>
+            <thead><tr>
+              <th style="width:28px"><input type="checkbox" id="comAll" onclick="toggleAllCom(this)" title="Seleziona tutte"></th>
+              <th class="sortable" onclick="ordinaCom('codice')">Codice<span id="srtc-codice"></span></th>
+              <th class="sortable" onclick="ordinaCom('descrizione')">Descrizione<span id="srtc-descrizione"></span></th>
+              <th class="colmob sortable" onclick="ordinaCom('cliente')">Cliente<span id="srtc-cliente"></span></th>
+              <th class="sortable" onclick="ordinaCom('attivo')">Stato<span id="srtc-attivo"></span></th>
+            </tr></thead>
             <tbody id="comBody"></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- MODALE CHANGELOG -->
+      <div id="modChangelog" class="modal hide" onclick="if(event.target===this)chiudiChangelog()">
+        <div class="modal-card">
+          <div class="label">🗒️ Novità — Beta 3</div>
+          <div style="font-size:13px;line-height:1.7;max-height:60vh;overflow:auto">
+            <div>🆔 <b>Codice (PIN)</b> a fianco del nome (Ore, totali, CSV, Report)</div>
+            <div>✏️ <b>Matita</b>: correggi/chiudi una giornata dall'ufficio</div>
+            <div>🤖 <b>Chiusura automatica 23:59</b> (forfait 4h) per le giornate dimenticate</div>
+            <div>👷 <b>Scheda Artigiani</b>: ricerca, ordinamento, selezione multipla (attiva/disattiva/elimina)</div>
+            <div>🔒 <b>OPERATORE</b> separato: non timbra, entra solo in ufficio</div>
+            <div>⏱ <b>Fine giornata</b>: orario continuato + ripartizione su più cantieri</div>
+            <div>🛰️ <b>Anti-furbetto</b>: segnala se un dispositivo timbra per più persone</div>
+            <div>🎪 <b>Commesse</b>: ricerca, ordinamento, elimina</div>
+            <div>🔎 <b>Cerca/ordina</b> anche su Ore e Commesse</div>
+          </div>
+          <div style="height:12px"></div>
+          <button class="b-em" onclick="chiudiChangelog()">Chiudi</button>
         </div>
       </div>
 
@@ -280,6 +319,26 @@
   function renderTutto(){ renderOre(); renderArtigiani(); renderCommesse(); }
 
   // ---- ORE ----
+  // changelog (clic sul badge versione)
+  function apriChangelog(){ document.getElementById('modChangelog').classList.remove('hide'); }
+  function chiudiChangelog(){ document.getElementById('modChangelog').classList.add('hide'); }
+  // Ore: ricerca + ordinamento colonne
+  var oreSort={col:'data',dir:-1};
+  function oreVisibili(){
+    var box=document.getElementById('oreCerca');
+    var cerca=(box?box.value:'').trim().toLowerCase();
+    var lista=(db.timbrature||[]).filter(function(t){ return !cerca || (String(t.artigianoNome||'')+' '+String(t.commessaCodice||'')+' '+String(pinDi(t.artigianoId))+' '+fmtData(t.data)).toLowerCase().indexOf(cerca)>=0; });
+    var col=oreSort.col,d=oreSort.dir;
+    lista.sort(function(a,b){
+      var va,vb;
+      if(col==='ore'){ va=a.oreNette||0; vb=b.oreNette||0; }
+      else if(col==='codice'){ va=pinDi(a.artigianoId); vb=pinDi(b.artigianoId); }
+      else { va=String(a[col]==null?'':a[col]).toLowerCase(); vb=String(b[col]==null?'':b[col]).toLowerCase(); }
+      return (va<vb?-1:va>vb?1:0)*d;
+    });
+    return lista;
+  }
+  function ordinaOre(col){ if(oreSort.col===col) oreSort.dir*=-1; else { oreSort.col=col; oreSort.dir=1; } renderOre(); }
   function renderOre(){
     var tt=db.timbrature||[];
     // totali per artigiano (solo giornate chiuse)
@@ -294,7 +353,13 @@
     var body=document.getElementById('oreBody');
     document.getElementById('oreVuoto').classList.toggle('hide', tt.length>0);
     var oggiS=oggiStr();
-    body.innerHTML = tt.map(function(t){
+    // anti-furbetto: stesso dispositivo usato da PIÙ artigiani diversi nel periodo
+    var perDisp={};
+    tt.forEach(function(x){ if(x.dispositivo){ (perDisp[x.dispositivo]=perDisp[x.dispositivo]||{})[x.artigianoId]=true; } });
+    function dispCondiviso(t){ return t.dispositivo && Object.keys(perDisp[t.dispositivo]||{}).length>1; }
+    var righe=oreVisibili();
+    ['data','codice','artigianoNome','commessaCodice','ore','stato'].forEach(function(k){ var e=document.getElementById('srto-'+k); if(e) e.textContent=(oreSort.col===k?(oreSort.dir>0?' ▲':' ▼'):''); });
+    body.innerHTML = righe.map(function(t){
       // giornata rimasta aperta in un giorno passato = timbratura mancata (manca il FINE)
       var st = t.stato==='in corso'
         ? (t.data<oggiS ? '<span class="b-st st-err">⚠ manca FINE</span>' : '<span class="b-st st-corso">in corso</span>')
@@ -303,7 +368,7 @@
       return '<tr>'+
         '<td>'+fmtData(t.data)+'</td><td class="cod">'+esc(pinDi(t.artigianoId))+'</td><td><b>'+esc(t.artigianoNome)+'</b></td><td>'+esc(t.commessaCodice)+'</td>'+
         '<td>'+esc(t.entrata||'')+'</td><td class="colmob">'+esc(t.pausa||'')+'</td><td class="colmob">'+esc(t.rientro||'')+'</td><td>'+esc(t.uscita||'')+'</td>'+
-        '<td><b>'+oreTxt(t.stato==='chiuso'?t.oreNette:'')+'</b></td><td class="colmob">'+foto+'</td><td>'+st+' <button class="b-ghost b-mini" style="margin-left:4px" onclick="apriCorr(\''+t.id+'\')" title="Correggi / chiudi giornata">✏️</button></td>'+
+        '<td><b>'+oreTxt(t.stato==='chiuso'?t.oreNette:'')+'</b></td><td class="colmob">'+foto+'</td><td>'+st+(dispCondiviso(t)?' <span class="b-st st-err" title="Stesso dispositivo usato da più artigiani — possibile timbratura per conto altrui">⚠ stesso disp.</span>':'')+' <button class="b-ghost b-mini" style="margin-left:4px" onclick="apriCorr(\''+t.id+'\')" title="Correggi / chiudi giornata">✏️</button></td>'+
         '<td><input type="checkbox" class="approva-chk" '+(t.approvata?'checked':'')+' onchange="approva(\''+t.id+'\', this)"></td>'+
       '</tr>';
     }).join('');
@@ -530,17 +595,52 @@
   }
 
   // ---- COMMESSE ----
-  function renderCommesse(){
-    var body=document.getElementById('comBody');
-    var cc=(db.commesse||[]).slice().sort(function(a,b){ return (b.attivo-a.attivo) || String(a.codice).localeCompare(String(b.codice)); });
-    body.innerHTML=cc.map(function(c){
-      var i=(db.commesse||[]).indexOf(c);
-      var st=c.attivo?'<span class="b-st st-app">attiva</span>':'<span class="b-st st-off">spenta</span>';
-      return '<tr class="cliccabile" onclick="editCom('+i+')"><td><b>'+esc(c.codice)+'</b></td><td>'+esc(c.descrizione||'')+'</td><td class="colmob">'+esc(c.cliente||'')+'</td><td>'+st+'</td></tr>';
-    }).join('');
+  var comSel={}, comSort={col:'codice',dir:1};
+  function commesseVisibili(){
+    var box=document.getElementById('comCerca');
+    var cerca=(box?box.value:'').trim().toLowerCase();
+    var lista=(db.commesse||[]).filter(function(c){ return !cerca || (String(c.codice||'')+' '+String(c.descrizione||'')+' '+String(c.cliente||'')).toLowerCase().indexOf(cerca)>=0; });
+    var col=comSort.col,d=comSort.dir;
+    lista.sort(function(a,b){
+      var va,vb;
+      if(col==='attivo'){ va=a.attivo?1:0; vb=b.attivo?1:0; }
+      else { va=String(a[col]==null?'':a[col]).toLowerCase(); vb=String(b[col]==null?'':b[col]).toLowerCase(); }
+      return (va<vb?-1:va>vb?1:0)*d;
+    });
+    return lista;
   }
-  function editCom(i){
-    var c=db.commesse[i];
+  function ordinaCom(col){ if(comSort.col===col) comSort.dir*=-1; else { comSort.col=col; comSort.dir=1; } renderCommesse(); }
+  function selCom(id,chk){ if(chk.checked) comSel[id]=true; else delete comSel[id]; aggiornaBulkBarCom(); }
+  function toggleAllCom(chk){ comSel={}; if(chk.checked) commesseVisibili().forEach(function(c){ comSel[c.id]=true; }); renderCommesse(); }
+  function aggiornaBulkBarCom(){ var n=Object.keys(comSel).length, b=document.getElementById('comBulk'); if(b){ b.style.display=n?'inline-flex':'none'; document.getElementById('comSelN').textContent=n+' selezionate'; } }
+  function renderCommesse(){
+    var lista=commesseVisibili();
+    ['codice','descrizione','cliente','attivo'].forEach(function(k){ var e=document.getElementById('srtc-'+k); if(e) e.textContent=(comSort.col===k?(comSort.dir>0?' ▲':' ▼'):''); });
+    document.getElementById('comBody').innerHTML=lista.map(function(c){
+      var st=c.attivo?'<span class="b-st st-app">attiva</span>':'<span class="b-st st-off">spenta</span>';
+      return '<tr class="cliccabile" onclick="editComById(\''+c.id+'\')">'+
+        '<td><input type="checkbox" class="art-chk" '+(comSel[c.id]?'checked':'')+' onclick="event.stopPropagation();selCom(\''+c.id+'\',this)"></td>'+
+        '<td><b>'+esc(c.codice)+'</b></td><td>'+esc(c.descrizione||'')+'</td><td class="colmob">'+esc(c.cliente||'')+'</td><td>'+st+'</td></tr>';
+    }).join('');
+    aggiornaBulkBarCom();
+    var all=document.getElementById('comAll'); if(all) all.checked=(lista.length>0 && lista.every(function(c){ return comSel[c.id]; }));
+  }
+  function bulkCom(azione){
+    var sel=(db.commesse||[]).filter(function(c){ return comSel[c.id]; });
+    if(!sel.length){ alert('Seleziona almeno una commessa.'); return; }
+    if(azione==='elimina'){
+      if(!confirm('Eliminare DEFINITIVAMENTE '+sel.length+' commessa/e?\n\n'+sel.map(function(c){return '· '+c.codice+' '+(c.descrizione||'');}).join('\n')+'\n\nLe timbrature storiche restano. Irreversibile.')) return;
+      var le=sel.map(function(c){ c._eti=String(c.codice); return c; });
+      salvaInSerie(le, function(c){ return chiama('POST','/eliminaCommessa',{pin:pinU, id:c.id}); }, function(okN,err){ comSel={}; var m='Eliminate: '+okN+'/'+le.length; if(err.length)m+='\n\nProblemi:\n'+err.join('\n'); alert(m); aggiorna(); });
+      return;
+    }
+    var attiva=(azione==='attiva');
+    if(!confirm((attiva?'Attivare':'Spegnere')+' '+sel.length+' commessa/e?')) return;
+    var le=sel.map(function(c){ c._eti=String(c.codice); return c; });
+    salvaInSerie(le, function(c){ return chiama('POST','/salvaCommessa',{pin:pinU, commessa:{id:c.id,codice:c.codice,descrizione:c.descrizione,cliente:c.cliente,attivo:attiva}}); }, function(okN,err){ comSel={}; var m='Aggiornate: '+okN+'/'+le.length; if(err.length)m+='\n\nProblemi:\n'+err.join('\n'); alert(m); aggiorna(); });
+  }
+  function editComById(id){
+    var c=(db.commesse||[]).find(function(x){ return x.id===id; }); if(!c) return;
     document.getElementById('c_id').value=c.id;
     document.getElementById('c_codice').value=c.codice||'';
     document.getElementById('c_descr').value=c.descrizione||'';
